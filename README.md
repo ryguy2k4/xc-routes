@@ -16,7 +16,9 @@
 Biking, Walking, and Hiking activities may be mixed in. Solved by linking GPX tracks to workout entries in the XML file. However, there are 8 GPX tracks that I could not link to an XML entry; I have assumed that they are indeed running workouts.
 
 ### Accidental Splits
-Accidental splits should be recombined into a singal run. Here are some possible ways to detect accidental splits: a run that starts and ends in an abnormal location, if the two activities are temporally continuity and spatially continuous, and if the combined segments resemble a known route.
+Accidental splits should be recombined into a single run. Here are some possible ways to detect accidental splits: a run that starts and ends in an abnormal location, if the two activities are temporally continuous and spatially continuous, and if the combined segments resemble a known route.
+
+Example: March 22, 2023
 
 ### Pauses in Runs
 In some runs, I would pause and not remember to unpause for quite a while, leading to gaps in the track. These should be separated into two track lines to avoid interpolation when displaying on a map.

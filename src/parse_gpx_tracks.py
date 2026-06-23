@@ -177,4 +177,9 @@ new = df_track_info.merge(workout_data_parsed[["start_datetime", "workoutActivit
 # exclude all non-running workouts
 new = new.loc[new["workoutActivityType"] == "HKWorkoutActivityTypeRunning"].drop(columns=["merge_col", "start_datetime_y", "workoutActivityType"]).reset_index(drop=True)
 
+
+# eliminate pause gap interpolation
+
+
+
 new.to_parquet("data/track_info.parquet")
