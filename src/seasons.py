@@ -1,105 +1,106 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import pandas as pd
 
-MIN_DATE = datetime(2019, 6, 10)
-MAX_DATE = datetime(2023, 5, 16)
+MIN_DATE = datetime(2019, 6, 10, tzinfo=ZoneInfo("America/Chicago"))
+MAX_DATE = datetime(2023, 5, 16, tzinfo=ZoneInfo("America/Chicago"))
 seasons = pd.DataFrame(
     [
         {
             "year": "Freshman",
             "season": "Summer Training",
-            "start_date": datetime(2019, 6, 10),
-            "end_date": datetime(2019, 8, 11),
+            "start_date": datetime(2019, 6, 10, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2019, 8, 12, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Freshman",
             "season": "XC Season",
-            "start_date": datetime(2019, 8, 12),
-            "end_date": datetime(2019, 11, 7),
+            "start_date": datetime(2019, 8, 12, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2019, 11, 8, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Freshman",
             "season": "Winter Training",
-            "start_date": datetime(2019, 11, 23),
-            "end_date": datetime(2020, 1, 26),
+            "start_date": datetime(2019, 11, 8, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2020, 1, 27, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Freshman",
             "season": "Track Season",
-            "start_date": datetime(2020, 1, 27),
-            "end_date": datetime(2020, 5, 1),
+            "start_date": datetime(2020, 1, 27, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2020, 5, 2, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Sophomore",
             "season": "Summer Training",
-            "start_date": datetime(2020, 5, 26),
-            "end_date": datetime(2020, 8, 9),
+            "start_date": datetime(2020, 5, 2, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2020, 8, 10, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Sophomore",
             "season": "XC Season",
-            "start_date": datetime(2020, 8, 10),
-            "end_date": datetime(2020, 10, 18),
+            "start_date": datetime(2020, 8, 10, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2020, 10, 19, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Sophomore",
             "season": "Winter Training",
-            "start_date": datetime(2020, 11, 9),
-            "end_date": datetime(2021, 4, 4),
+            "start_date": datetime(2020, 10, 19, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2021, 4, 5, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Sophomore",
             "season": "Track Season",
-            "start_date": datetime(2021, 4, 5),
-            "end_date": datetime(2021, 6, 9),
+            "start_date": datetime(2021, 4, 5, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2021, 6, 10, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Junior",
             "season": "Summer Training",
-            "start_date": datetime(2021, 6, 28),
-            "end_date": datetime(2021, 8, 8),
+            "start_date": datetime(2021, 6, 10, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2021, 8, 9, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Junior",
             "season": "XC Season",
-            "start_date": datetime(2021, 8, 9),
-            "end_date": datetime(2021, 10, 24),
+            "start_date": datetime(2021, 8, 9, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2021, 10, 25, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Junior",
             "season": "Winter Training",
-            "start_date": datetime(2021, 11, 22),
-            "end_date": datetime(2022, 1, 30),
+            "start_date": datetime(2021, 10, 25, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2022, 1, 31, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Junior",
             "season": "Track Season",
-            "start_date": datetime(2022, 1, 31),
-            "end_date": datetime(2022, 4, 27),
+            "start_date": datetime(2022, 1, 31, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2022, 4, 28, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Senior",
             "season": "Summer Training",
-            "start_date": datetime(2022, 6, 13),
-            "end_date": datetime(2022, 8, 7),
+            "start_date": datetime(2022, 4, 28, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2022, 8, 8, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Senior",
             "season": "XC Season",
-            "start_date": datetime(2022, 8, 8),
-            "end_date": datetime(2022, 11, 5),
+            "start_date": datetime(2022, 8, 8, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2022, 11, 6, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Senior",
             "season": "Winter Training",
-            "start_date": datetime(2022, 12, 1),
-            "end_date": datetime(2023, 1, 29),
+            "start_date": datetime(2022, 11, 6, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2023, 1, 30, tzinfo=ZoneInfo("America/Chicago")),
         },
         {
             "year": "Senior",
             "season": "Track Season",
-            "start_date": datetime(2023, 1, 30),
-            "end_date": datetime(2023, 5, 16),
+            "start_date": datetime(2023, 1, 30, tzinfo=ZoneInfo("America/Chicago")),
+            "end_date": datetime(2023, 5, 16, tzinfo=ZoneInfo("America/Chicago")),
         },
     ]
 )
@@ -107,6 +108,7 @@ seasons = pd.DataFrame(
 
 def bucket_date(date):
     for i, row in seasons.iterrows():
-        if (date >= row["start_date"]) & (date <= row["end_date"]):
+        if (date >= row["start_date"]) & (date < row["end_date"]):
             return row["year"], row["season"]
+    print(f"No Match for {date}")
     return (None, None)

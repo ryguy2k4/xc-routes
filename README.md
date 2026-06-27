@@ -7,21 +7,43 @@
 * Secondary Goal: Understand how my running stats changed over time
     * Derive distance, speed, workouts
     * Understand fitness trends
+* Thoroughly document and describe every part of my data science pipeline in a Jupyter notebook
 
-
+## Data Cleaning / Parsing Steps
+* Load track file paths and extract the date from the file name
+* Filter for tracks within my high school career
+* Merge with workout XML to remove non-running tracks
+* Year and Season bucketing
+* GPX track data extraction
+    * Start/end times and points
+    * Pace, distance, duration, elevation change
+    * Track lines with pauses detected and fixed
+* *Route Detection*
+    * Unsupervised Classification of Routes
+    * Manually Create a Training Dataset
+    * Supervised Classification of Routes
+* Run Categorization & Merging
+    * Detect and categorize doubles
+    * *Detect and merge accidental splits* -> the same thing might accomplish both of these in one go
+    * *Detect and merge workouts* -> the same thing might accomplish both of these in one go (do I want warmup/cooldown merged?)
 
 ## Data Quality Issues
 
 ### Activity Type
-Biking, Walking, and Hiking activities may be mixed in. Solved by linking GPX tracks to workout entries in the XML file. However, there are 8 GPX tracks that I could not link to an XML entry; I have assumed that they are indeed running workouts.
+Biking, Walking, and Hiking activities may be mixed in. However, there are 8 GPX tracks that I could not link to an XML entry; I have assumed that they are indeed running workouts.
+
+**Solution**: GPX tracks can be linked to workout entries in the health export XML file, which contains an activity type field.
 
 ### Accidental Splits
-Accidental splits should be recombined into a single run. Here are some possible ways to detect accidental splits: a run that starts and ends in an abnormal location, if the two activities are temporally continuous and spatially continuous, and if the combined segments resemble a known route.
+Sometimes during the middle of a run, I would accidently end the workout and have to start another one. These accidental splits should be recombined into a single run. (Example: March 22, 2023).
 
-Example: March 22, 2023
+**Possible Solutions**: a run that starts and ends in an abnormal location, if the two activities are temporally continuous and spatially continuous, and if the combined segments resemble a known route.
+
 
 ### Pauses in Runs
 In some runs, I would pause and not remember to unpause for quite a while, leading to gaps in the track. These should be separated into two track lines to avoid interpolation when displaying on a map.
+
+**Solution**: Detect abnormally large gaps between consecutive points on a track using a threshold of 10 $\sigma$.
 
 
 ## Categorizations to Make
@@ -47,6 +69,9 @@ Workout segments can be identified by their faster pace or greater elevation cha
 A race is short, fast, and accompanied by a warmup and cooldown. Most races were not recorded by my watch, but a small number were, along with unoffical time trials.
 
 ### Route
+Routes are segements of tracks that show up time and time again across the dataset. My strategy for route classification is to first do a pass of unsupervised clustering in order to see what all the routes are. Then, I will use the results to construct a training dataset. For each route, I will pick a single track line that best exemplifies that particular route. Then I will run a supervised learning algorithm to classify the routes in the entire dataset. A single run may contain more than one route, since sometimes routes are chained together.
+
+
 * School
     * Lake Loop
     * Dog Leg

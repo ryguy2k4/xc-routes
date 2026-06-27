@@ -1,43 +1,71 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import pandas as pd
 import geopandas as gpd
 import glob
 import numpy as np
-import xml.etree.ElementTree as ET
-
+import shapely
 import seasons
 
+"""
+## Data Cleaning / Parsing Steps
+* Load track file paths and extract the date from the file name
+* Filter for tracks within my high school career
+* Merge with workout XML to remove non-running tracks (try doing this before gpx track data extraction)
+* Year and Season bucketing
+* GPX track data extraction
+    * Start/end times and points
+    * Pace, distance, duration, elevation change
+    * Track lines with pauses detected and fixed
+* *Route Detection*
+* Run Categorization & Merging
+    * Detect and categorize doubles
+    * *Detect and merge accidental splits* -> the same thing might accomplish both of these in one go
+    * *Detect and merge workouts* -> the same thing might accomplish both of these in one go (do I want warmup/cooldown merged?)
+"""
 
-# load track files
+
+# load track file paths
 path = "/Users/ryansponzilli/Developer/Python Projects/health-data/data/raw/apple_health/apple_health_export/workout-routes"
-tracks = glob.glob(path + "/*")
-track_datetimes = [datetime.strptime(t.split("/")[-1].removeprefix("route_").removesuffix(".gpx"), "%Y-%m-%d_%I.%M%p") for t in tracks]
+df_tracks = pd.DataFrame({"track_file": glob.glob(path + "/*")})
 
-# assemble dataframe
-df_tracks = pd.DataFrame({"track_file": tracks, "track_file_datetime": track_datetimes})
+# parse track file dates
+df_tracks["track_file_datetime"] = df_tracks["track_file"].apply(
+    lambda x: datetime.strptime(
+        x.split("/")[-1].removeprefix("route_")
+        .removesuffix(".gpx"), "%Y-%m-%d_%I.%M%p")
+        .replace(tzinfo=ZoneInfo("America/Chicago")
+    )
+)
 df_tracks["track_file_date"] = df_tracks["track_file_datetime"].dt.date
+
+# filter for tracks within my high school career
 df_tracks = (
     df_tracks.loc[(df_tracks["track_file_datetime"] >= seasons.MIN_DATE) & (df_tracks["track_file_datetime"] <= seasons.MAX_DATE)]
     .sort_values("track_file_datetime")
     .reset_index(drop=True)
 )
 
+# match each GPX track to an Apple Health workout entry
+workout_data_parsed = pd.read_csv("data/workout_data.csv", parse_dates=["creation_datetime", "start_datetime", "end_datetime"])
+merge_cols = []
+for i, row in df_tracks.iterrows():
+    closest_match_idx = np.abs(workout_data_parsed['creation_datetime'] - row["track_file_datetime"]).argmin()
+    merge_cols.append(workout_data_parsed.iloc[closest_match_idx]["creation_datetime"])
+df_tracks["merge_col"] = merge_cols
+# merge datasets to obtain the activity type column
+df_tracks = df_tracks.merge(workout_data_parsed[["creation_datetime", "workoutActivityType"]], left_on="merge_col", right_on="creation_datetime", suffixes=[None, "_y"])
+# exclude all non-running workouts
+df_tracks = df_tracks.loc[df_tracks["workoutActivityType"] == "HKWorkoutActivityTypeRunning"].drop(columns=["merge_col", "creation_datetime", "workoutActivityType"]).reset_index(drop=True)
 
 # bucket dates into seasons
-df_tracks["year"] = df_tracks["track_file_datetime"].apply(
-    lambda x: seasons.bucket_date(x)[0]
-)
-df_tracks["season"] = df_tracks["track_file_datetime"].apply(
-    lambda x: seasons.bucket_date(x)[1]
-)
-df_tracks = df_tracks.dropna()
-
+df_tracks["year"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[0])
+df_tracks["season"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[1])
 
 # extract statistics from gpx files
-def extract_track_info(gpx_file):  
+def extract_track_info(gpx_file):
     # parse file
     gdf = gpd.read_file(gpx_file, layer="track_points")
-    track_line = gpd.read_file(file, layer="tracks").iloc[0]['geometry']
     gdf = gdf[["time", "ele", "geometry"]]
     gdf["time"] = pd.to_datetime(gdf["time"])
     gdf = gdf.rename(columns={"time": "datetime", "ele": "elevation"})
@@ -68,19 +96,48 @@ def extract_track_info(gpx_file):
     # elevation
     total_elevation_change = np.abs(gdf["elevation"].diff()).sum()
 
-    return (
-        start_point,
-        end_point,
-        track_line,
-        start_datetime,
-        end_datetime,
-        total_duration,
-        total_distance,
-        average_pace,
-        total_elevation_change,
-    )
+    # track line
+    def amend_track_pauses(gdf_track_points):
+        # get diffs column to detect outliers which indicate a pause
+        gdf_utm = gdf_track_points.to_crs(gdf_track_points.estimate_utm_crs())
+        diffs = gdf_utm["geometry"].distance(gdf_utm["geometry"].shift())[1::]
+        # calculate outlier threshold
+        t = np.mean(diffs) + 10*np.std(diffs)
+        # get outlier indices
+        split_idx = diffs[diffs > t].index
+        # split linestring at pauses
+        segments = []
+        prev_idx = 0
+        for idx in split_idx:
+            if (idx - prev_idx) < 2:
+                continue
+            segments.append(gdf.iloc[prev_idx:idx]['geometry'])
+            prev_idx = idx
+        # always add last segment
+        last_segment = gdf.iloc[prev_idx::]['geometry']
+        if len(last_segment) > 1:
+            segments.append(last_segment)
+        # recombine as multilinestring
+        return shapely.MultiLineString([shapely.LineString(c) for c in segments])
+    track_line = amend_track_pauses(gdf)
 
+    return {
+        "start_point": start_point,
+        "end_point": end_point,
+        "track_line": track_line,
+        "start_datetime": start_datetime,
+        "end_datetime": end_datetime,
+        "total_duration": total_duration,
+        "total_distance (mi)": total_distance,
+        "average_pace (min/mi)": average_pace,
+        "total_elevation_change (m)": total_elevation_change,
+    }
 
+# add extracted stats to dataframe
+stat_dicts = df_tracks['track_file'].apply(lambda x: extract_track_info(x))
+df_tracks = pd.concat([df_tracks, pd.DataFrame(stat_dicts.to_list())], axis=1)
+
+# add indicator column for routes within St. Charles
 def in_stc(geom):
     STC_LAT_MIN = 41.866329
     STC_LAT_MAX = 41.951764
@@ -95,34 +152,10 @@ def in_stc(geom):
         & (lat >= STC_LAT_MIN)
         & (lat <= STC_LAT_MAX)
     )
+df_tracks['in_stc'] = df_tracks['start_point'].apply(lambda x: in_stc(x))
 
-
-df_track_info = df_tracks.copy()
-df_track_info["start_point"] = None
-df_track_info["end_point"] = None
-df_track_info["track_line"] = None
-df_track_info["start_datetime"] = None
-df_track_info["end_datetime"] = None
-df_track_info["total_duration"] = None
-df_track_info["total_distance (mi)"] = None
-df_track_info["average_pace (min/mi)"] = None
-df_track_info["total_elevation_change (m)"] = None
-df_track_info["in_stc"] = None
-
-for file in df_tracks["track_file"].to_list():
-    start_point, end_point, track_line, start_datetime, end_datetime, total_duration, total_distance, average_pace, total_elevation_change = extract_track_info(file)
-    df_track_info.loc[df_track_info["track_file"] == file, "start_point"] = start_point
-    df_track_info.loc[df_track_info["track_file"] == file, "end_point"] = end_point
-    df_track_info.loc[df_track_info["track_file"] == file, "track_line"] = track_line
-    df_track_info.loc[df_track_info["track_file"] == file, "start_datetime"] = start_datetime
-    df_track_info.loc[df_track_info["track_file"] == file, "end_datetime"] = end_datetime
-    df_track_info.loc[df_track_info["track_file"] == file, "total_duration"] = total_duration
-    df_track_info.loc[df_track_info["track_file"] == file, "total_distance (mi)"] = total_distance
-    df_track_info.loc[df_track_info["track_file"] == file, "average_pace (min/mi)"] = average_pace
-    df_track_info.loc[df_track_info["track_file"] == file, "total_elevation_change (m)"] = total_elevation_change
-    df_track_info.loc[df_track_info["track_file"] == file, "in_stc"] = in_stc(start_point)
-
-df_track_info = df_track_info[
+# organize columns
+df_tracks = df_tracks[
     [
         "track_file",
         "track_file_datetime",
@@ -141,45 +174,9 @@ df_track_info = df_track_info[
         "track_line",
     ]
 ]
-df_track_info = gpd.GeoDataFrame(df_track_info, geometry="track_line", crs="EPSG:4326")
+
+# turn the dataframe into a geodataframe
+df_track_info = gpd.GeoDataFrame(df_tracks, geometry="track_line", crs="EPSG:4326")
 df_track_info["start_point"] = gpd.GeoSeries(df_track_info["start_point"], crs=df_track_info.crs)
 df_track_info["end_point"] = gpd.GeoSeries(df_track_info["end_point"], crs=df_track_info.crs)
-
-### Load APPLE HEALTH WORKOUT XML
-filepath = '/Users/ryansponzilli/Developer/Python Projects/health-data/data/raw/apple_health/apple_health_export/export.xml'
-# create element tree object
-tree = ET.parse(filepath) 
-# for every health record, extract the attributes
-root = tree.getroot()
-workout_list = [x.attrib for x in root.iter('Workout')]
-workout_data = pd.DataFrame(workout_list)
-workout_data_parsed = workout_data.copy()
-# proper type to dates
-for col in ['creationDate', 'startDate', 'endDate']:
-    workout_data_parsed[col] = pd.to_datetime(workout_data_parsed[col])
-workout_data_parsed['duration'] = workout_data_parsed['duration'].astype(float)
-# get relevant dates
-workout_data_parsed = workout_data_parsed.loc[(workout_data_parsed['startDate'] >= pd.to_datetime(seasons.MIN_DATE, utc=True)) & (workout_data_parsed['startDate'] <= pd.to_datetime(seasons.MAX_DATE, utc=True))]
-# get relevant data
-workout_data_parsed = workout_data_parsed.loc[workout_data_parsed['sourceName'] != "Strava"]
-workout_data_parsed = workout_data_parsed[["workoutActivityType", "creationDate", "startDate", "endDate", "duration", "durationUnit"]].rename(columns={"creationDate": "creation_datetime", "startDate": "start_datetime", "endDate": "end_datetime"})
-workout_data_parsed = workout_data_parsed.sort_values("start_datetime").reset_index(drop=True)
-
-# match each gpx track to a row in parsed_workout_data
-merge_cols = []
-for i, row in df_track_info.iterrows():
-    closest_match_idx = np.abs(workout_data_parsed['start_datetime'] - row["start_datetime"]).argmin()
-    merge_cols.append(workout_data_parsed.iloc[closest_match_idx]["start_datetime"])
-df_track_info["merge_col"] = merge_cols
-
-# merge to get workout type
-new = df_track_info.merge(workout_data_parsed[["start_datetime", "workoutActivityType"]], left_on="merge_col", right_on="start_datetime", suffixes=[None, "_y"])
-# exclude all non-running workouts
-new = new.loc[new["workoutActivityType"] == "HKWorkoutActivityTypeRunning"].drop(columns=["merge_col", "start_datetime_y", "workoutActivityType"]).reset_index(drop=True)
-
-
-# eliminate pause gap interpolation
-
-
-
-new.to_parquet("data/track_info.parquet")
+df_track_info.to_parquet("data/track_info.parquet")
