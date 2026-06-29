@@ -32,7 +32,6 @@ df_tracks = (
 # bucket dates into seasons
 df_tracks["year"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[0])
 df_tracks["season"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[1])
-df_tracks.to_parquet("data/intermediate/track_info_parsed.parquet")
 
 # match each GPX track to an Apple Health workout entry
 workout_data_parsed = pd.read_parquet("data/parsed/workout_data.parquet")

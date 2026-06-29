@@ -10,7 +10,7 @@ root = ET.parse(filepath).getroot()
 
 # extract the Workout entries
 workout_data = pd.DataFrame([x.attrib for x in root.iter('Workout')])
-workout_data.to_parquet("data/raw_parquet/workout_data.parquet")
+workout_data.to_parquet("data/intermediate/workout_data.parquet")
 
 # parse data types
 workout_data['creationDate'] = pd.to_datetime(workout_data['creationDate'])
@@ -25,4 +25,3 @@ workout_data = workout_data.loc[(workout_data['startDate'] >= pd.to_datetime(sea
 workout_data = workout_data.loc[workout_data['sourceName'] != "Strava"]
 workout_data = workout_data[["workoutActivityType", "creationDate", "startDate", "endDate", "duration", "durationUnit"]].rename(columns={"creationDate": "creation_datetime", "startDate": "start_datetime", "endDate": "end_datetime"})
 workout_data = workout_data.sort_values("start_datetime").reset_index(drop=True)
-workout_data.to_parquet("data/parsed/workout_data.parquet")

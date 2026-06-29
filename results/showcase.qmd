@@ -1,0 +1,275 @@
+---
+title: '**Cross Country Workout Data**'
+jupyter: python3
+---
+
+*Created by Ryan Sponzilli*
+
+
+```{python}
+#| echo: false
+import pandas as pd
+import geopandas as gpd
+import numpy as np
+from datetime import datetime
+from zoneinfo import ZoneInfo
+import matplotlib.pyplot as plt
+import glob
+
+import seasons
+import plotting
+```
+
+## Table of Contents
+* [1. Introduction](#1-introduction)
+    * [1.1 Goals](#11-goals)
+    * [1.2 Raw Data](#12-raw-data)
+        * [1.2.1 Records](#121-records)
+        * [1.2.2 Workouts](#122-workouts)
+        * [1.2.3 GPX Tracks](#123-gpx-tracks)
+* [2. Exploratory Data Analysis]()
+* [3. Data Cleaning](#2-data-cleaning)
+    * [3.1 GPX File List]()
+        * [3.1.1 Parse Filename]()
+        * [3.1.2 Filter Time Period]()
+        * [3.1.3 Year & Season Bucketing]()
+    * [3.2 Workouts XML]()
+        * [3.2.1 Filter Time Period]()
+        * [3.2.2 Filter Activity Type]()
+    * [3.3 Merge GPX File List with Workout Data]()
+    * [3.4 GPX Track Data Extraction]()
+        * [3.4.1 Start & Stop Locations]()
+        * [3.4.2 Track Line Pause Detection]()
+        * [3.4.3 Run Statistics]()
+* [4. Route Classification](#3-route-classification)
+    * [4.1 Unsupervised Route Clustering]()
+    * [4.2 Creating a Route Library]()
+    * [4.2 Supervised Route Clustering]()
+* [5. Run Type Classification](#4-run-type-classification)
+    * [5.1 Run Type Overview]()
+    * [5.2 Flagging Doubles]()
+    * [5.3 Fixing Accidental Splits]()
+    * [5.4 Grouping Workouts]()
+* [6. Analysis](#5-analysis)
+* [7. Summary](#6-summary)
+
+## 1. Introduction
+
+I ran cross country and track all four years that I was in high school, and I recorded every single run on my Apple Watch. I believe that this is a very unique trove of data that has the potential to be very interesting and very personal.
+
+### 1.1 Goals
+
+* Learn how to work with geospatial data and tools:
+    * Learn how to manipulate geospatial data with the `geopandas` library.
+    * Learn how to create effective visualizations of geospatial data.
+* Develop a data pipeline to ingest the raw data and output a processed dataset ready for analysis and visualization:
+    * Use machine learning techniques to perform route geoclustering and route decomposition.
+    * Categorize runs into specific types (e.g., workouts, long runs, normal runs).
+    * Thoroughly document every decision and assumption made while processing the data.
+* Analyze the data to create visually appealing and informative maps and charts:
+    * Understand the geographic distribution of my runs.
+    * Understand my training regimen and how it evolved over time.
+    * Understand how I improved over my four years.
+
+### 1.2 Raw Data
+
+I obtained the raw data by exporting my Apple Health data. This export gave me a 2.23 GB `.xml` file and a folder containing 1,232 `.gpx` files.
+
+#### 1.2.1 Records
+
+The `.xml` file contains a `Record` tag, which contains a data record for a health statistic, such as *ActiveEnergyBurned*, *HeartRate*, or *EnvironmentalAudioExposure*. This will be useful for getting fitness statistics, such as heart rate, VO2 max, and calories burned.
+
+```{python}
+#| echo: false
+df = pd.read_parquet("../data/intermediate/record_data.parquet")
+print("Sample of 3 \"Record\" records:")
+display(df.sample(3))
+print(f"Dataframe Length: {len(df)} Rows")
+```
+
+#### 1.2.2 Workouts
+The `.xml` file contains a `Workout` tag, which contains a data record for individual workouts. Not much useful information is provided in these records, just dates, a duration, and the type of activity. The type of activity is the most important field. Since the GPX tracks do not specify what activity they contain, I will need to link them to these records to identifiy which ones correspond to runs, and not to walks, bike rides, or hikes.
+
+```{python}
+#| echo: false
+df = pd.read_parquet("../data/intermediate/workout_data.parquet")
+print("Sample of 3 \"Workout\" records:")
+display(df.sample(3))
+print(f"Dataframe Length: {len(df)} Rows")
+```
+
+
+#### 1.2.3 GPX Tracks
+
+The `.gpx` files are the most valuable data source. They contain the geometry of the run, which consists of a sequence of latitude and longitude coordinates sampled approximately every second during the run. A single `.gpx` file can contain multiple data layers.
+
+```{python}
+#| echo: false
+gpx_file = glob.glob("../data/raw/workout-routes/*.gpx")[0]
+print("GPX File Layers:")
+display(gpd.list_layers(gpx_file))
+```
+
+<br>
+
+However, only two of the layers contain any data. These are the `tracks` layer and the `track_points` layer. I can load these individually using `geopandas.read_file()`. Most of the columns do not contain any data, but what really matters is the `geometry` column.
+
+```{python}
+#| echo: false
+gdf = gpd.read_file(gpx_file, layer='tracks')
+print("\"tracks\" Layer:")
+display(gdf)
+```
+
+<br>
+
+```{python}
+#| echo: false
+gdf = gpd.read_file(glob.glob("../data/raw/workout-routes/*.gpx")[0], layer='track_points')
+print("\"track_points\" Layer:")
+display(gdf.head(3))
+print(f"Dataframe Length: {len(gdf)} Rows")
+```
+
+The `track_points` layer is more useful, since it provides a more granular representation of the data. For each point, it gives a coordinate, timestamp, and elevation. These can be used to derive statistics such as elapsed distance, running pace, elevation change, and later, for route geoclustering.
+
+```{python}
+#| echo: false
+fig, ax = plt.subplots(figsize=(12, 5))
+print("The data for a gpx track line plotted on a map:")
+plotting.plot_map(gdf, ax)
+plt.show()
+```
+
+## 2. Exploratory Data Analysis
+EDA
+
+## 3. Data Cleaning
+
+The raw data must be converted into a convenient form, have certain constraints applied, and new features derived. As shown above, the raw data is spread across several different sources which must be integrated together.
+
+### 3.1 GPX File List
+
+The GPX File list is the first piece of the puzzle. I will start by obtaining all of the filepaths.
+
+```{python}
+#| echo: false
+path = "/Users/ryansponzilli/Developer/Python Projects/health-data/data/raw/apple_health/apple_health_export/workout-routes"
+df_tracks = pd.DataFrame({"track_file": glob.glob(path + "/*")})
+print("Here are the filepaths:")
+display(df_tracks.sample(3))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+print(f"Example file name: {df_tracks.iloc[0].values[0].split("/")[-1]}")
+```
+
+Each file name contains a date and time (referred to as a datetime). This datetime corresponds to the creation of the file. This is an important piece of information, so I will extract it from the file name and put it in its own column. It will also be useful to have a column with the date only.
+
+```{python}
+#| echo: false
+# parse track file dates
+df_tracks["track_file_datetime"] = df_tracks["track_file"].apply(
+    lambda x: datetime.strptime(
+        x.split("/")[-1].removeprefix("route_")
+        .removesuffix(".gpx"), "%Y-%m-%d_%I.%M%p")
+        .replace(tzinfo=ZoneInfo("America/Chicago")
+    )
+)
+df_tracks["track_file_date"] = df_tracks["track_file_datetime"].dt.date
+print("Updated table with dates extracted:")
+display(df_tracks.sample(3))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+```
+
+The next thing I want to do is to filter for only the runs that occurred while I was in high school. Additionally, I want to bucket the runs into each year of high school and each season of the year. To do this, I went back into my calendar and manually created a table with the necessary information.
+
+```{python}
+#| echo: false
+print(f"Minimum Date: {seasons.MIN_DATE}")
+print(f"Maximum Date {seasons.MAX_DATE}")
+print("Year and Seasons Buckets:")
+display(seasons.seasons)
+```
+
+<br>
+
+Now I will apply the minimum and maximum date constraints, and apply the bucketing.
+
+```{python}
+#| echo: false
+# bucket dates into seasons
+df_tracks = (
+    df_tracks.loc[(df_tracks["track_file_datetime"] >= seasons.MIN_DATE) & (df_tracks["track_file_datetime"] <= seasons.MAX_DATE)]
+    .sort_values("track_file_datetime")
+    .reset_index(drop=True)
+)
+df_tracks["year"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[0])
+df_tracks["season"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[1])
+print("Updated table with dates bucketed:")
+display(df_tracks.sample(3))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+```
+
+<br>
+
+### 3.2 Workouts XML
+
+As I mentioned earlier, these GPX tracks do not exclusively belong to running workouts. To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the "Workouts" table from the `.xml` file. We already looked at what the raw "Workouts" table contains.
+
+I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.
+
+```{python}
+#| echo: false
+df_workouts = pd.read_parquet("../data/intermediate/workout_data.parquet")
+# parse data types
+df_workouts['creationDate'] = pd.to_datetime(df_workouts['creationDate'])
+df_workouts['startDate'] = pd.to_datetime(df_workouts['startDate'])
+df_workouts['endDate'] = pd.to_datetime(df_workouts['endDate'])
+df_workouts['duration'] = df_workouts['duration'].astype(float)
+
+# filter time period
+df_workouts = df_workouts.loc[(df_workouts['startDate'] >= pd.to_datetime(seasons.MIN_DATE, utc=True)) & (df_workouts['startDate'] <= pd.to_datetime(seasons.MAX_DATE, utc=True))]
+
+# get relevant data
+df_workouts = df_workouts.loc[df_workouts['sourceName'] != "Strava"]
+df_workouts = df_workouts[["workoutActivityType", "creationDate", "startDate", "endDate", "duration", "durationUnit"]].rename(columns={"creationDate": "creation_datetime", "startDate": "start_datetime", "endDate": "end_datetime"})
+df_workouts = df_workouts.sort_values("start_datetime").reset_index(drop=True)
+
+print("Workouts table after parsing:")
+display(df_workouts.sample(3, random_state=5))
+print(f"Dataframe Length: {len(df_workouts)} Rows")
+```
+
+### 3.3 Merge GPX File List with Workouts XML
+
+Both tables are prepared, but there is one obstacle remaining to merging them together. The `track_file_datetime` column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the `creation_datetime` column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each `track_file_datetime` in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.
+
+```{python}
+#| echo: false
+df_merged = pd.read_parquet("../data/intermediate/track_info_merged.parquet")
+print("Merged Dataframes:")
+display(df_merged.head(3))
+print(f"Dataframe Length: {len(df_merged)} Rows")
+```
+
+Notice that we dropped from 1268 rows to 1033 rows. We have successfully removed all of the non-running GPX tracks from the dataframe.
+
+<br>
+
+### 3.4 GPX Track Data Extraction
+
+The most important data, of course, lies within the GPX files themselves.
+
+
+## 4. Route Classification
+Route Classification
+
+## 5. Run Type Classification
+Run Type Classification
+
+## 6. Analysis
+Analysis
+
+## 7. Summary
+Summary
+
+
