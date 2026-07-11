@@ -27,31 +27,32 @@ import plotting
         * [1.2.1 Records](#121-records)
         * [1.2.2 Workouts](#122-workouts)
         * [1.2.3 GPX Tracks](#123-gpx-tracks)
-* [2. Exploratory Data Analysis]()
-* [3. Data Cleaning](#2-data-cleaning)
-    * [3.1 GPX File List]()
-        * [3.1.1 Parse Filename]()
-        * [3.1.2 Filter Time Period]()
-        * [3.1.3 Year & Season Bucketing]()
-    * [3.2 Workouts XML]()
-        * [3.2.1 Filter Time Period]()
-        * [3.2.2 Filter Activity Type]()
-    * [3.3 Merge GPX File List with Workout Data]()
-    * [3.4 GPX Track Data Extraction]()
-        * [3.4.1 Start & Stop Locations]()
-        * [3.4.2 Track Line Pause Detection]()
-        * [3.4.3 Run Statistics]()
-* [4. Route Classification](#3-route-classification)
+* [2. Data Cleaning](#2-data-cleaning)
+    * [2.1 GPX File List]()
+        * [2.1.1 Parse Filename]()
+        * [2.1.2 Filter Time Period]()
+        * [2.1.3 Year & Season Bucketing]()
+    * [2.2 Workouts XML]()
+        * [2.2.1 Filter Time Period]()
+        * [2.2.2 Filter Activity Type]()
+    * [2.3 Merge GPX File List with Workout Data]()
+    * [2.4 GPX Track Data Extraction]()
+        * [2.4.3 Statistics]()
+        * [2.4.2 Pause Detection]()
+
+
+
+* [3. Route Classification](#3-route-classification)
     * [4.1 Unsupervised Route Clustering]()
     * [4.2 Creating a Route Library]()
     * [4.2 Supervised Route Clustering]()
-* [5. Run Type Classification](#4-run-type-classification)
+* [4. Run Type Classification](#4-run-type-classification)
     * [5.1 Run Type Overview]()
     * [5.2 Flagging Doubles]()
     * [5.3 Fixing Accidental Splits]()
     * [5.4 Grouping Workouts]()
-* [6. Analysis](#5-analysis)
-* [7. Summary](#6-summary)
+* [5. Analysis](#5-analysis)
+* [6. Summary](#6-summary)
 
 ## 1. Introduction
 
@@ -141,14 +142,11 @@ plotting.plot_map(gdf, ax)
 plt.show()
 ```
 
-## 2. Exploratory Data Analysis
-EDA
-
-## 3. Data Cleaning
+## 2. Data Cleaning
 
 The raw data must be converted into a convenient form, have certain constraints applied, and new features derived. As shown above, the raw data is spread across several different sources which must be integrated together.
 
-### 3.1 GPX File List
+### 2.1 GPX File List
 
 The GPX File list is the first piece of the puzzle. I will start by obtaining all of the filepaths.
 
@@ -211,7 +209,7 @@ print(f"Dataframe Length: {len(df_tracks)} Rows")
 
 <br>
 
-### 3.2 Workouts XML
+### 2.2 Workouts XML
 
 As I mentioned earlier, these GPX tracks do not exclusively belong to running workouts. To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the "Workouts" table from the `.xml` file. We already looked at what the raw "Workouts" table contains.
 
@@ -239,7 +237,7 @@ display(df_workouts.sample(3, random_state=5))
 print(f"Dataframe Length: {len(df_workouts)} Rows")
 ```
 
-### 3.3 Merge GPX File List with Workouts XML
+### 2.3 Merge GPX File List with Workouts XML
 
 Both tables are prepared, but there is one obstacle remaining to merging them together. The `track_file_datetime` column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the `creation_datetime` column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each `track_file_datetime` in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.
 
@@ -255,9 +253,33 @@ Notice that we dropped from 1268 rows to 1033 rows. We have successfully removed
 
 <br>
 
-### 3.4 GPX Track Data Extraction
+### 2.4 GPX Track Data Extraction
+Now that we have a clean dataset containing all of the runs, it's time to look inside the GPX files themselves.
 
-The most important data, of course, lies within the GPX files themselves.
+#### 2.4.1 Statistics
+For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation.
+
+I would like to extract a few summary statistics from each run merge them into our master dataframe. These include:
+
+* The start and end times of the run
+* The start and end coordinates of the run
+* The duration of the run $^*$
+* The total distance of the run $^*$
+* The average pace of the run $^*$
+* The total elevation change of the run $^*$
+
+$^*$ These require decisions on handling pauses in the run.
+
+#### 2.4.2 Pause Detection
+Many runs contain pauses, where I manually paused the run to wait to cross the street, take a break, or for a rest between workout segments. In some cases, the pause may be extra long because I forget to resume the run.
+
+Left as-is, these pauses will result in calculating incorrect statistics like duration, distance, and pace.
+
+Pauses can be detected in both distance and time, and there are two cases: time-pauses and distance-gaps. The former is a gap in the timestamp and may or may not also have a corresponding distance gap. A distance gap is a discontinuity in the track line and always has a corresponding time-pause.
+
+1. Detect number of time-pauses per run, with threshold of 5 seconds.
+2. Detect number of distance-gaps per run, with threshold of 50 meters, split distance pauses into multiple line segments.
+3. Create total_duration and active_duration features.
 
 
 ## 4. Route Classification

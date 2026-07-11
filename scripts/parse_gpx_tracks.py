@@ -54,67 +54,72 @@ def extract_track_info(gpx_file):
     gdf["time"] = pd.to_datetime(gdf["time"])
     gdf = gdf.rename(columns={"time": "datetime", "ele": "elevation"})
 
+    # create helper columns
+    gdf['dt'] = gdf["datetime"].diff()
+    gdf_utm = gdf.to_crs(gdf.estimate_utm_crs())
+    gdf["dx"] = gdf_utm["geometry"].distance(gdf_utm["geometry"].shift())
+
+    # split into segments at pause indices
+    pause_idx = list(gdf.loc[gdf['dt'] > timedelta(seconds=1)].index)
+    gdf['pause_segment'] = None
+    segment_idx = ([0] + pause_idx + [len(gdf)])
+    for i in range(len(segment_idx) - 1):
+        gdf.loc[segment_idx[i]:segment_idx[i+1], 'pause_segment'] = i
+
+    # remove segments less than 5 seconds, since these are mistakes with no meaningful value
+    if len(gdf) >= 5:
+        gdf = gdf.groupby("pause_segment", group_keys=False).filter(lambda x: len(x) >= 5)
+    else:
+        # prevent the entire dataset from being removed and messing things up later
+        # should probably filter for total length earlier in this script
+        print(f"{gpx_file} has length {len(gdf)}")
+
+    # calculate pace for each pause segment separately
+    def calculate_rolling_pace(gdf):
+        # use a 10 second rolling window for calculating pace
+        gdf["pace (min/mi)"] = (gdf["dt"].cumsum().dt.total_seconds() / 60).diff(10) / (gdf["dx"].cumsum() / 1609).diff(10)
+        # backfill nans that resulted from the rolling window
+        gdf["pace (min/mi)"] = gdf["pace (min/mi)"].bfill()
+        return gdf
+    gdf = gdf.groupby('pause_segment').apply(calculate_rolling_pace).reset_index().drop(columns=["level_1"], errors='ignore')
+
+
     # start / end points
     start_point = gdf.iloc[0]["geometry"]
     end_point = gdf.iloc[-1]["geometry"]
-
     # start / end times
     start_datetime = gdf["datetime"].min()
     end_datetime = gdf["datetime"].max()
-
-    # elapsed time / duration
-    gdf["elapsed_time"] = gdf["datetime"].diff().cumsum()
-    gdf["elapsed_time"] = gdf["elapsed_time"].fillna(timedelta(seconds=0))
-    total_duration = gdf["elapsed_time"].max()
-
-    # elapsed distance / total distance
-    gdf["elapsed_distance (mi)"] = (gdf.to_crs(gdf.estimate_utm_crs())["geometry"].distance(gdf.to_crs(gdf.estimate_utm_crs())["geometry"].shift()).cumsum() / 1609)
-    gdf["elapsed_distance (mi)"] = gdf["elapsed_distance (mi)"].fillna(0)
-    total_distance = gdf["elapsed_distance (mi)"].max()
-
-    # pace
-    gdf["pace (min/mi)"] = (gdf["elapsed_time"].dt.total_seconds() / 60).diff(10) / gdf["elapsed_distance (mi)"].diff(10)
-    gdf["pace (min/mi)"] = gdf["pace (min/mi)"].bfill()
+    # calculate number of pauses, where a pause is defined as dt > 1 second
+    num_pauses = len(gdf.loc[gdf['dt'] > timedelta(seconds=1)])
+    # calculate the total duration, defined as the time between starting and ending the activity
+    total_duration = gdf['dt'].sum()
+    # calculate the active duration, defined as the total time minus any pauses
+    active_duration = gdf.loc[gdf['dt'] == timedelta(seconds=1), 'dt'].sum()
+    # calculate total distance, excluding pauses
+    total_distance_miles = gdf.loc[(gdf['dt'] == timedelta(seconds=1)), 'dx'].sum() / 1609
+    # calculate average pace, exclude any pace over 10 min/mi since those are not representative of actual running
     average_pace = gdf.loc[gdf["pace (min/mi)"] < 10, "pace (min/mi)"].mean()
-
-    # elevation
-    total_elevation_change = np.abs(gdf["elevation"].diff()).sum()
-
-    # track line
-    def amend_track_pauses(gdf_track_points):
-        # get diffs column to detect outliers which indicate a pause
-        gdf_utm = gdf_track_points.to_crs(gdf_track_points.estimate_utm_crs())
-        diffs = gdf_utm["geometry"].distance(gdf_utm["geometry"].shift())[1::]
-        # calculate outlier threshold
-        t = np.mean(diffs) + 10*np.std(diffs)
-        # get outlier indices
-        split_idx = diffs[diffs > t].index
-        # split linestring at pauses
-        segments = []
-        prev_idx = 0
-        for idx in split_idx:
-            if (idx - prev_idx) < 2:
-                continue
-            segments.append(gdf.iloc[prev_idx:idx]['geometry'])
-            prev_idx = idx
-        # always add last segment
-        last_segment = gdf.iloc[prev_idx::]['geometry']
-        if len(last_segment) > 1:
-            segments.append(last_segment)
-        # recombine as multilinestring
-        return shapely.MultiLineString([shapely.LineString(c) for c in segments])
-    track_line = amend_track_pauses(gdf)
+    # calculate total ascent, excluding pauses
+    total_ascent = gdf.loc[(gdf['dt'] == timedelta(seconds=1)), 'elevation'].diff().loc[gdf['elevation'].diff() > 0].sum()
+    # calculate total descent, excluding pauses
+    total_descent = gdf.loc[(gdf['dt'] == timedelta(seconds=1)), 'elevation'].diff().loc[gdf['elevation'].diff() < 0].sum()
+    # split each pause segment into a LineString within a MultiLineString
+    fixed_track_line = shapely.MultiLineString([shapely.LineString(group['geometry']) for _, group in gdf.groupby('pause_segment')])
 
     return {
         "start_point": start_point,
         "end_point": end_point,
-        "track_line": track_line,
+        "num_pauses": num_pauses,
+        "track_line": fixed_track_line,
         "start_datetime": start_datetime,
         "end_datetime": end_datetime,
         "total_duration": total_duration,
-        "total_distance (mi)": total_distance,
+        "active_duration": active_duration,
+        "total_distance (mi)": total_distance_miles,
         "average_pace (min/mi)": average_pace,
-        "total_elevation_change (m)": total_elevation_change,
+        "total_ascent (m)": total_ascent,
+        "total_descent (m)": total_descent,
     }
 
 # add extracted stats to dataframe
@@ -146,12 +151,15 @@ df_tracks = df_tracks[
         "track_file_date",
         "start_datetime",
         "end_datetime",
-        "year",
-        "season",
+        "num_pauses",
         "total_duration",
+        "active_duration",
         "total_distance (mi)",
         "average_pace (min/mi)",
-        "total_elevation_change (m)",
+        "total_ascent (m)",
+        "total_descent (m)",
+        "year",
+        "season",
         "in_stc",
         "start_point",
         "end_point",

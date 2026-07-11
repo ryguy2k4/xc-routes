@@ -37,6 +37,35 @@ ul.task-list li input[type="checkbox"] {
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -79,43 +108,41 @@ ul.task-list li input[type="checkbox"] {
 <li><a href="#123-gpx-tracks">1.2.3 GPX Tracks</a></li>
 </ul></li>
 </ul></li>
-<li><a href="">2. Exploratory Data Analysis</a></li>
-<li><a href="#2-data-cleaning">3. Data Cleaning</a>
+<li><a href="#2-data-cleaning">2. Data Cleaning</a>
 <ul>
-<li><a href="">3.1 GPX File List</a>
+<li><a href="">2.1 GPX File List</a>
 <ul>
-<li><a href="">3.1.1 Parse Filename</a></li>
-<li><a href="">3.1.2 Filter Time Period</a></li>
-<li><a href="">3.1.3 Year &amp; Season Bucketing</a></li>
+<li><a href="">2.1.1 Parse Filename</a></li>
+<li><a href="">2.1.2 Filter Time Period</a></li>
+<li><a href="">2.1.3 Year &amp; Season Bucketing</a></li>
 </ul></li>
-<li><a href="">3.2 Workouts XML</a>
+<li><a href="">2.2 Workouts XML</a>
 <ul>
-<li><a href="">3.2.1 Filter Time Period</a></li>
-<li><a href="">3.2.2 Filter Activity Type</a></li>
+<li><a href="">2.2.1 Filter Time Period</a></li>
+<li><a href="">2.2.2 Filter Activity Type</a></li>
 </ul></li>
-<li><a href="">3.3 Merge GPX File List with Workout Data</a></li>
-<li><a href="">3.4 GPX Track Data Extraction</a>
+<li><a href="">2.3 Merge GPX File List with Workout Data</a></li>
+<li><a href="">2.4 GPX Track Data Extraction</a>
 <ul>
-<li><a href="">3.4.1 Start &amp; Stop Locations</a></li>
-<li><a href="">3.4.2 Track Line Pause Detection</a></li>
-<li><a href="">3.4.3 Run Statistics</a></li>
+<li><a href="">2.4.3 Statistics</a></li>
+<li><a href="">2.4.2 Pause Detection</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#3-route-classification">4. Route Classification</a>
+<li><a href="#3-route-classification">3. Route Classification</a>
 <ul>
 <li><a href="">4.1 Unsupervised Route Clustering</a></li>
 <li><a href="">4.2 Creating a Route Library</a></li>
 <li><a href="">4.2 Supervised Route Clustering</a></li>
 </ul></li>
-<li><a href="#4-run-type-classification">5. Run Type Classification</a>
+<li><a href="#4-run-type-classification">4. Run Type Classification</a>
 <ul>
 <li><a href="">5.1 Run Type Overview</a></li>
 <li><a href="">5.2 Flagging Doubles</a></li>
 <li><a href="">5.3 Fixing Accidental Splits</a></li>
 <li><a href="">5.4 Grouping Workouts</a></li>
 </ul></li>
-<li><a href="#5-analysis">6. Analysis</a></li>
-<li><a href="#6-summary">7. Summary</a></li>
+<li><a href="#5-analysis">5. Analysis</a></li>
+<li><a href="#6-summary">6. Summary</a></li>
 </ul>
 </section>
 <section id="introduction" class="level2">
@@ -149,7 +176,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="records" class="level4">
 <h4 class="anchored" data-anchor-id="records">1.2.1 Records</h4>
 <p>The <code>.xml</code> file contains a <code>Record</code> tag, which contains a data record for a health statistic, such as <em>ActiveEnergyBurned</em>, <em>HeartRate</em>, or <em>EnvironmentalAudioExposure</em>. This will be useful for getting fitness statistics, such as heart rate, VO2 max, and calories burned.</p>
-<div id="820bec90" class="cell" data-execution_count="2">
+<div id="ed6c863f" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-stdout">
 <pre><code>Sample of 3 "Record" records:</code></pre>
 </div>
@@ -174,40 +201,40 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">2643202</td>
-<td>HKQuantityTypeIdentifierActiveEnergyBurned</td>
+<td data-quarto-table-cell-role="th">104800</td>
+<td>HKQuantityTypeIdentifierHeartRate</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>9.0</td>
-<td>Cal</td>
-<td>2022-10-24 07:22:11 -0600</td>
-<td>2022-10-24 07:15:25 -0600</td>
-<td>2022-10-24 07:16:16 -0600</td>
-<td>0.256</td>
-<td>&lt;&lt;HKDevice: 0x3003f1180&gt;, name:Apple Watch, ma...</td>
+<td>8.6</td>
+<td>count/min</td>
+<td>2022-09-08 08:40:40 -0600</td>
+<td>2022-09-08 08:34:48 -0600</td>
+<td>2022-09-08 08:34:48 -0600</td>
+<td>56</td>
+<td>&lt;&lt;HKDevice: 0x3003f4e60&gt;, name:Apple Watch, ma...</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">3829946</td>
+<td data-quarto-table-cell-role="th">3885879</td>
 <td>HKQuantityTypeIdentifierActiveEnergyBurned</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>4.2.3</td>
+<td>4.3</td>
 <td>Cal</td>
-<td>2018-03-19 08:30:35 -0600</td>
-<td>2018-03-19 08:28:54 -0600</td>
-<td>2018-03-19 08:29:56 -0600</td>
-<td>0.733</td>
-<td>&lt;&lt;HKDevice: 0x3003f5090&gt;, name:Apple Watch, ma...</td>
+<td>2018-06-03 12:45:53 -0600</td>
+<td>2018-06-03 12:41:11 -0600</td>
+<td>2018-06-03 12:42:13 -0600</td>
+<td>0.225</td>
+<td>&lt;&lt;HKDevice: 0x3000f5e50&gt;, name:Apple Watch, ma...</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">1617951</td>
-<td>HKQuantityTypeIdentifierDistanceWalkingRunning</td>
+<td data-quarto-table-cell-role="th">1187369</td>
+<td>HKQuantityTypeIdentifierStepCount</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>5.1.1</td>
-<td>mi</td>
-<td>2018-11-28 20:04:01 -0600</td>
-<td>2018-11-28 20:03:12 -0600</td>
-<td>2018-11-28 20:03:37 -0600</td>
-<td>0.0210147</td>
-<td>&lt;&lt;HKDevice: 0x3000fe580&gt;, name:Apple Watch, ma...</td>
+<td>10.6.1</td>
+<td>count</td>
+<td>2024-12-24 08:17:51 -0600</td>
+<td>2024-12-24 08:17:45 -0600</td>
+<td>2024-12-24 08:17:48 -0600</td>
+<td>7</td>
+<td>&lt;&lt;HKDevice: 0x3003f4910&gt;, name:Apple Watch, ma...</td>
 </tr>
 </tbody>
 </table>
@@ -222,7 +249,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="workouts" class="level4">
 <h4 class="anchored" data-anchor-id="workouts">1.2.2 Workouts</h4>
 <p>The <code>.xml</code> file contains a <code>Workout</code> tag, which contains a data record for individual workouts. Not much useful information is provided in these records, just dates, a duration, and the type of activity. The type of activity is the most important field. Since the GPX tracks do not specify what activity they contain, I will need to link them to these records to identifiy which ones correspond to runs, and not to walks, bike rides, or hikes.</p>
-<div id="ace44834" class="cell" data-execution_count="3">
+<div id="a7d5416b" class="cell" data-execution_count="3">
 <div class="cell-output cell-output-stdout">
 <pre><code>Sample of 3 "Workout" records:</code></pre>
 </div>
@@ -247,40 +274,40 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">781</td>
+<td data-quarto-table-cell-role="th">1227</td>
 <td>HKWorkoutActivityTypeRunning</td>
-<td>28.00726193388303</td>
+<td>7.894880199432373</td>
 <td>min</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>7.5</td>
-<td>2021-07-23 04:41:44 -0600</td>
-<td>2021-07-23 04:12:34 -0600</td>
-<td>2021-07-23 04:41:42 -0600</td>
-<td>&lt;&lt;HKDevice: 0x30003d6d0&gt;, name:Apple Watch, ma...</td>
+<td>9.3.1</td>
+<td>2023-02-20 08:36:19 -0600</td>
+<td>2023-02-20 08:15:06 -0600</td>
+<td>2023-02-20 08:23:00 -0600</td>
+<td>&lt;&lt;HKDevice: 0x3003dd720&gt;, name:Apple Watch, ma...</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">717</td>
+<td data-quarto-table-cell-role="th">387</td>
 <td>HKWorkoutActivityTypeRunning</td>
-<td>11.61065973242124</td>
+<td>31.45804229776065</td>
 <td>min</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>7.3</td>
-<td>2021-05-22 07:36:03 -0600</td>
-<td>2021-05-22 07:13:42 -0600</td>
-<td>2021-05-22 07:36:01 -0600</td>
-<td>&lt;&lt;HKDevice: 0x3003e0960&gt;, name:Apple Watch, ma...</td>
+<td>6.2.6</td>
+<td>2020-07-02 06:29:17 -0600</td>
+<td>2020-07-02 05:46:49 -0600</td>
+<td>2020-07-02 06:29:15 -0600</td>
+<td>&lt;&lt;HKDevice: 0x30000e5d0&gt;, name:Apple Watch, ma...</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">801</td>
+<td data-quarto-table-cell-role="th">272</td>
 <td>HKWorkoutActivityTypeRunning</td>
-<td>11.70940600037575</td>
+<td>6.26972318092982</td>
 <td>min</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>7.5</td>
-<td>2021-08-12 05:09:56 -0600</td>
-<td>2021-08-12 04:49:20 -0600</td>
-<td>2021-08-12 05:09:54 -0600</td>
-<td>&lt;&lt;HKDevice: 0x3000bd450&gt;, name:Apple Watch, ma...</td>
+<td>6.1.2</td>
+<td>2020-02-07 16:08:49 -0600</td>
+<td>2020-02-07 15:44:58 -0600</td>
+<td>2020-02-07 16:08:49 -0600</td>
+<td>&lt;&lt;HKDevice: 0x30005ff20&gt;, name:Apple Watch, ma...</td>
 </tr>
 </tbody>
 </table>
@@ -295,7 +322,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="gpx-tracks" class="level4">
 <h4 class="anchored" data-anchor-id="gpx-tracks">1.2.3 GPX Tracks</h4>
 <p>The <code>.gpx</code> files are the most valuable data source. They contain the geometry of the run, which consists of a sequence of latitude and longitude coordinates sampled approximately every second during the run. A single <code>.gpx</code> file can contain multiple data layers.</p>
-<div id="04d94e9c" class="cell" data-execution_count="4">
+<div id="5e6f0b6f" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-stdout">
 <pre><code>GPX File Layers:</code></pre>
 </div>
@@ -345,7 +372,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <p><br></p>
 <p>However, only two of the layers contain any data. These are the <code>tracks</code> layer and the <code>track_points</code> layer. I can load these individually using <code>geopandas.read_file()</code>. Most of the columns do not contain any data, but what really matters is the <code>geometry</code> column.</p>
-<div id="d9731fbb" class="cell" data-execution_count="5">
+<div id="146fc138" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>"tracks" Layer:</code></pre>
 </div>
@@ -396,7 +423,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p><br></p>
-<div id="ab812d5e" class="cell" data-execution_count="6">
+<div id="22c2ed10" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-stdout">
 <pre><code>"track_points" Layer:</code></pre>
 </div>
@@ -515,7 +542,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>The <code>track_points</code> layer is more useful, since it provides a more granular representation of the data. For each point, it gives a coordinate, timestamp, and elevation. These can be used to derive statistics such as elapsed distance, running pace, elevation change, and later, for route geoclustering.</p>
-<div id="0ed2231d" class="cell" data-execution_count="7">
+<div id="dbfefc48" class="cell" data-execution_count="7">
 <div class="cell-output cell-output-stdout">
 <pre><code>The data for a gpx track line plotted on a map:</code></pre>
 </div>
@@ -540,7 +567,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="gpx-file-list" class="level3">
 <h3 class="anchored" data-anchor-id="gpx-file-list">3.1 GPX File List</h3>
 <p>The GPX File list is the first piece of the puzzle. I will start by obtaining all of the filepaths.</p>
-<div id="7ab2b102" class="cell" data-execution_count="8">
+<div id="3d0fce4d" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-stdout">
 <pre><code>Here are the filepaths:</code></pre>
 </div>
@@ -557,15 +584,15 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">293</td>
+<td data-quarto-table-cell-role="th">786</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">649</td>
+<td data-quarto-table-cell-role="th">965</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">19</td>
+<td data-quarto-table-cell-role="th">401</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 </tbody>
@@ -579,7 +606,7 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </div>
 </div>
 <p>Each file name contains a date and time (referred to as a datetime). This datetime corresponds to the creation of the file. This is an important piece of information, so I will extract it from the file name and put it in its own column. It will also be useful to have a column with the date only.</p>
-<div id="a784a8a0" class="cell" data-execution_count="9">
+<div id="32ca0bbc" class="cell" data-execution_count="9">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated table with dates extracted:</code></pre>
 </div>
@@ -598,22 +625,22 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">864</td>
+<td data-quarto-table-cell-role="th">421</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2018-10-01 10:11:00-05:00</td>
-<td>2018-10-01</td>
+<td>2020-08-03 07:22:00-05:00</td>
+<td>2020-08-03</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">883</td>
+<td data-quarto-table-cell-role="th">408</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2019-08-12 16:02:00-05:00</td>
-<td>2019-08-12</td>
+<td>2021-01-02 10:54:00-06:00</td>
+<td>2021-01-02</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">700</td>
+<td data-quarto-table-cell-role="th">196</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-07-01 06:58:00-05:00</td>
-<td>2020-07-01</td>
+<td>2020-08-13 15:30:00-05:00</td>
+<td>2020-08-13</td>
 </tr>
 </tbody>
 </table>
@@ -625,7 +652,7 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </div>
 </div>
 <p>The next thing I want to do is to filter for only the runs that occurred while I was in high school. Additionally, I want to bucket the runs into each year of high school and each season of the year. To do this, I went back into my calendar and manually created a table with the necessary information.</p>
-<div id="b461c59a" class="cell" data-execution_count="10">
+<div id="fb6e3f72" class="cell" data-execution_count="10">
 <div class="cell-output cell-output-stdout">
 <pre><code>Minimum Date: 2019-06-10 00:00:00-05:00
 Maximum Date 2023-05-16 00:00:00-05:00
@@ -766,7 +793,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 <p><br></p>
 <p>Now I will apply the minimum and maximum date constraints, and apply the bucketing.</p>
-<div id="42f706a5" class="cell" data-execution_count="11">
+<div id="b2964c76" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated table with dates bucketed:</code></pre>
 </div>
@@ -787,28 +814,28 @@ Year and Seasons Buckets:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">1091</td>
+<td data-quarto-table-cell-role="th">372</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2023-03-23 15:24:00-05:00</td>
-<td>2023-03-23</td>
-<td>Senior</td>
-<td>Track Season</td>
+<td>2020-08-28 12:31:00-05:00</td>
+<td>2020-08-28</td>
+<td>Sophomore</td>
+<td>XC Season</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">475</td>
+<td data-quarto-table-cell-role="th">303</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-12-23 10:42:00-06:00</td>
-<td>2020-12-23</td>
+<td>2020-06-23 07:00:00-05:00</td>
+<td>2020-06-23</td>
 <td>Sophomore</td>
-<td>Winter Training</td>
+<td>Summer Training</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">814</td>
+<td data-quarto-table-cell-role="th">274</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-11-24 08:49:00-06:00</td>
-<td>2021-11-24</td>
-<td>Junior</td>
-<td>Winter Training</td>
+<td>2020-04-10 10:27:00-05:00</td>
+<td>2020-04-10</td>
+<td>Freshman</td>
+<td>Track Season</td>
 </tr>
 </tbody>
 </table>
@@ -825,7 +852,7 @@ Year and Seasons Buckets:</code></pre>
 <h3 class="anchored" data-anchor-id="workouts-xml">3.2 Workouts XML</h3>
 <p>As I mentioned earlier, these GPX tracks do not exclusively belong to running workouts. To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the “Workouts” table from the <code>.xml</code> file. We already looked at what the raw “Workouts” table contains.</p>
 <p>I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.</p>
-<div id="0298afc0" class="cell" data-execution_count="12">
+<div id="fe022870" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-stdout">
 <pre><code>Workouts table after parsing:</code></pre>
 </div>
@@ -886,7 +913,7 @@ Year and Seasons Buckets:</code></pre>
 <section id="merge-gpx-file-list-with-workouts-xml" class="level3">
 <h3 class="anchored" data-anchor-id="merge-gpx-file-list-with-workouts-xml">3.3 Merge GPX File List with Workouts XML</h3>
 <p>Both tables are prepared, but there is one obstacle remaining to merging them together. The <code>track_file_datetime</code> column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the <code>creation_datetime</code> column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each <code>track_file_datetime</code> in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.</p>
-<div id="d597f6f3" class="cell" data-execution_count="13">
+<div id="1832ffa9" class="cell" data-execution_count="13">
 <div class="cell-output cell-output-stdout">
 <pre><code>Merged Dataframes:</code></pre>
 </div>
@@ -944,7 +971,16 @@ Year and Seasons Buckets:</code></pre>
 </section>
 <section id="gpx-track-data-extraction" class="level3">
 <h3 class="anchored" data-anchor-id="gpx-track-data-extraction">3.4 GPX Track Data Extraction</h3>
-<p>The most important data, of course, lies within the GPX files themselves.</p>
+<p>Now that we have a clean dataset containing all of the runs, it’s time to look inside the GPX files themselves.</p>
+<section id="statistics" class="level4">
+<h4 class="anchored" data-anchor-id="statistics">3.4.1 Statistics</h4>
+<p>For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation.</p>
+<p>I would like to extract a few summary statistics from each run merge them into our master dataframe. These include: * The start and end times of the run * The start and end coordinates of the run * The duration of the run <span class="math inline">\(^*\)</span> * The total distance of the run <span class="math inline">\(^*\)</span> * The average pace of the run <span class="math inline">\(^*\)</span> * The total elevation change of the run <span class="math inline">\(^*\)</span></p>
+<p><span class="math inline">\(^*\)</span> These require decisions on handling pauses in the run.</p>
+</section>
+<section id="pause-detection" class="level4">
+<h4 class="anchored" data-anchor-id="pause-detection">3.4.2 Pause Detection</h4>
+</section>
 </section>
 </section>
 <section id="route-classification" class="level2">
