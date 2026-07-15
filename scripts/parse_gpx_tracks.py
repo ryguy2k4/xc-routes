@@ -66,9 +66,9 @@ def extract_track_info(gpx_file):
     for i in range(len(segment_idx) - 1):
         gdf.loc[segment_idx[i]:segment_idx[i+1], 'pause_segment'] = i
 
-    # remove segments less than 5 seconds, since these are mistakes with no meaningful value
-    if len(gdf) >= 5:
-        gdf = gdf.groupby("pause_segment", group_keys=False).filter(lambda x: len(x) >= 5)
+    # remove segments less than 10 seconds, since these are mistakes with no meaningful value
+    if len(gdf) > 10:
+        gdf = gdf.groupby("pause_segment", group_keys=False).filter(lambda x: len(x) > 10)
     else:
         # prevent the entire dataset from being removed and messing things up later
         # should probably filter for total length earlier in this script

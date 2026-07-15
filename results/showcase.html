@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -37,35 +71,6 @@ ul.task-list li input[type="checkbox"] {
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 </head>
 
@@ -101,12 +106,6 @@ window.Quarto = {
 <li><a href="#1-introduction">1. Introduction</a>
 <ul>
 <li><a href="#11-goals">1.1 Goals</a></li>
-<li><a href="#12-raw-data">1.2 Raw Data</a>
-<ul>
-<li><a href="#121-records">1.2.1 Records</a></li>
-<li><a href="#122-workouts">1.2.2 Workouts</a></li>
-<li><a href="#123-gpx-tracks">1.2.3 GPX Tracks</a></li>
-</ul></li>
 </ul></li>
 <li><a href="#2-data-cleaning">2. Data Cleaning</a>
 <ul>
@@ -148,6 +147,8 @@ window.Quarto = {
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">1. Introduction</h2>
 <p>I ran cross country and track all four years that I was in high school, and I recorded every single run on my Apple Watch. I believe that this is a very unique trove of data that has the potential to be very interesting and very personal.</p>
+<p>I obtained the raw data by exporting my Apple Health data. This export gave me a 2.23 GB <code>.xml</code> file and a folder containing 1,232 <code>.gpx</code> files.</p>
+<p>I have constructed this document to explain each decision I made while working with this data and present the results. My work on this project was very nonlinear and experimental, as is anything that is being figured out for the first time, so please be aware that I have taken my final process and presented it in a logical and linear order here. Note that not all of the code is visible, and that the code that is made visible is meant to illustrate the processes.</p>
 <section id="goals" class="level3">
 <h3 class="anchored" data-anchor-id="goals">1.1 Goals</h3>
 <ul>
@@ -169,405 +170,16 @@ window.Quarto = {
 <li>Understand how I improved over my four years.</li>
 </ul></li>
 </ul>
+<!-- The `.xml` file contains a `Record` tag, which contains a data record for a health statistic, such as *ActiveEnergyBurned*, *HeartRate*, or *EnvironmentalAudioExposure*. This will be useful for getting fitness statistics, such as heart rate, VO2 max, and calories burned. -->
 </section>
-<section id="raw-data" class="level3">
-<h3 class="anchored" data-anchor-id="raw-data">1.2 Raw Data</h3>
-<p>I obtained the raw data by exporting my Apple Health data. This export gave me a 2.23 GB <code>.xml</code> file and a folder containing 1,232 <code>.gpx</code> files.</p>
-<section id="records" class="level4">
-<h4 class="anchored" data-anchor-id="records">1.2.1 Records</h4>
-<p>The <code>.xml</code> file contains a <code>Record</code> tag, which contains a data record for a health statistic, such as <em>ActiveEnergyBurned</em>, <em>HeartRate</em>, or <em>EnvironmentalAudioExposure</em>. This will be useful for getting fitness statistics, such as heart rate, VO2 max, and calories burned.</p>
-<div id="ed6c863f" class="cell" data-execution_count="2">
-<div class="cell-output cell-output-stdout">
-<pre><code>Sample of 3 "Record" records:</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">type</th>
-<th data-quarto-table-cell-role="th">sourceName</th>
-<th data-quarto-table-cell-role="th">sourceVersion</th>
-<th data-quarto-table-cell-role="th">unit</th>
-<th data-quarto-table-cell-role="th">creationDate</th>
-<th data-quarto-table-cell-role="th">startDate</th>
-<th data-quarto-table-cell-role="th">endDate</th>
-<th data-quarto-table-cell-role="th">value</th>
-<th data-quarto-table-cell-role="th">device</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">104800</td>
-<td>HKQuantityTypeIdentifierHeartRate</td>
-<td>Ryan’s Apple&nbsp;Watch</td>
-<td>8.6</td>
-<td>count/min</td>
-<td>2022-09-08 08:40:40 -0600</td>
-<td>2022-09-08 08:34:48 -0600</td>
-<td>2022-09-08 08:34:48 -0600</td>
-<td>56</td>
-<td>&lt;&lt;HKDevice: 0x3003f4e60&gt;, name:Apple Watch, ma...</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">3885879</td>
-<td>HKQuantityTypeIdentifierActiveEnergyBurned</td>
-<td>Ryan’s Apple&nbsp;Watch</td>
-<td>4.3</td>
-<td>Cal</td>
-<td>2018-06-03 12:45:53 -0600</td>
-<td>2018-06-03 12:41:11 -0600</td>
-<td>2018-06-03 12:42:13 -0600</td>
-<td>0.225</td>
-<td>&lt;&lt;HKDevice: 0x3000f5e50&gt;, name:Apple Watch, ma...</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">1187369</td>
-<td>HKQuantityTypeIdentifierStepCount</td>
-<td>Ryan’s Apple&nbsp;Watch</td>
-<td>10.6.1</td>
-<td>count</td>
-<td>2024-12-24 08:17:51 -0600</td>
-<td>2024-12-24 08:17:45 -0600</td>
-<td>2024-12-24 08:17:48 -0600</td>
-<td>7</td>
-<td>&lt;&lt;HKDevice: 0x3003f4910&gt;, name:Apple Watch, ma...</td>
-</tr>
-</tbody>
-</table>
-
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Dataframe Length: 4964069 Rows</code></pre>
-</div>
-</div>
-</section>
-<section id="workouts" class="level4">
-<h4 class="anchored" data-anchor-id="workouts">1.2.2 Workouts</h4>
-<p>The <code>.xml</code> file contains a <code>Workout</code> tag, which contains a data record for individual workouts. Not much useful information is provided in these records, just dates, a duration, and the type of activity. The type of activity is the most important field. Since the GPX tracks do not specify what activity they contain, I will need to link them to these records to identifiy which ones correspond to runs, and not to walks, bike rides, or hikes.</p>
-<div id="a7d5416b" class="cell" data-execution_count="3">
-<div class="cell-output cell-output-stdout">
-<pre><code>Sample of 3 "Workout" records:</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">workoutActivityType</th>
-<th data-quarto-table-cell-role="th">duration</th>
-<th data-quarto-table-cell-role="th">durationUnit</th>
-<th data-quarto-table-cell-role="th">sourceName</th>
-<th data-quarto-table-cell-role="th">sourceVersion</th>
-<th data-quarto-table-cell-role="th">creationDate</th>
-<th data-quarto-table-cell-role="th">startDate</th>
-<th data-quarto-table-cell-role="th">endDate</th>
-<th data-quarto-table-cell-role="th">device</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">1227</td>
-<td>HKWorkoutActivityTypeRunning</td>
-<td>7.894880199432373</td>
-<td>min</td>
-<td>Ryan’s Apple&nbsp;Watch</td>
-<td>9.3.1</td>
-<td>2023-02-20 08:36:19 -0600</td>
-<td>2023-02-20 08:15:06 -0600</td>
-<td>2023-02-20 08:23:00 -0600</td>
-<td>&lt;&lt;HKDevice: 0x3003dd720&gt;, name:Apple Watch, ma...</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">387</td>
-<td>HKWorkoutActivityTypeRunning</td>
-<td>31.45804229776065</td>
-<td>min</td>
-<td>Ryan’s Apple&nbsp;Watch</td>
-<td>6.2.6</td>
-<td>2020-07-02 06:29:17 -0600</td>
-<td>2020-07-02 05:46:49 -0600</td>
-<td>2020-07-02 06:29:15 -0600</td>
-<td>&lt;&lt;HKDevice: 0x30000e5d0&gt;, name:Apple Watch, ma...</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">272</td>
-<td>HKWorkoutActivityTypeRunning</td>
-<td>6.26972318092982</td>
-<td>min</td>
-<td>Ryan’s Apple&nbsp;Watch</td>
-<td>6.1.2</td>
-<td>2020-02-07 16:08:49 -0600</td>
-<td>2020-02-07 15:44:58 -0600</td>
-<td>2020-02-07 16:08:49 -0600</td>
-<td>&lt;&lt;HKDevice: 0x30005ff20&gt;, name:Apple Watch, ma...</td>
-</tr>
-</tbody>
-</table>
-
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Dataframe Length: 1460 Rows</code></pre>
-</div>
-</div>
-</section>
-<section id="gpx-tracks" class="level4">
-<h4 class="anchored" data-anchor-id="gpx-tracks">1.2.3 GPX Tracks</h4>
-<p>The <code>.gpx</code> files are the most valuable data source. They contain the geometry of the run, which consists of a sequence of latitude and longitude coordinates sampled approximately every second during the run. A single <code>.gpx</code> file can contain multiple data layers.</p>
-<div id="5e6f0b6f" class="cell" data-execution_count="4">
-<div class="cell-output cell-output-stdout">
-<pre><code>GPX File Layers:</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">name</th>
-<th data-quarto-table-cell-role="th">geometry_type</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>waypoints</td>
-<td>Point</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">1</td>
-<td>routes</td>
-<td>LineString</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">2</td>
-<td>tracks</td>
-<td>MultiLineString</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">3</td>
-<td>route_points</td>
-<td>Point</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">4</td>
-<td>track_points</td>
-<td>Point</td>
-</tr>
-</tbody>
-</table>
-
-</div>
-</div>
-</div>
-<p><br></p>
-<p>However, only two of the layers contain any data. These are the <code>tracks</code> layer and the <code>track_points</code> layer. I can load these individually using <code>geopandas.read_file()</code>. Most of the columns do not contain any data, but what really matters is the <code>geometry</code> column.</p>
-<div id="146fc138" class="cell" data-execution_count="5">
-<div class="cell-output cell-output-stdout">
-<pre><code>"tracks" Layer:</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">name</th>
-<th data-quarto-table-cell-role="th">cmt</th>
-<th data-quarto-table-cell-role="th">desc</th>
-<th data-quarto-table-cell-role="th">src</th>
-<th data-quarto-table-cell-role="th">link1_href</th>
-<th data-quarto-table-cell-role="th">link1_text</th>
-<th data-quarto-table-cell-role="th">link1_type</th>
-<th data-quarto-table-cell-role="th">link2_href</th>
-<th data-quarto-table-cell-role="th">link2_text</th>
-<th data-quarto-table-cell-role="th">link2_type</th>
-<th data-quarto-table-cell-role="th">number</th>
-<th data-quarto-table-cell-role="th">type</th>
-<th data-quarto-table-cell-role="th">geometry</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>Route 2020-10-06 3:55pm</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>NaN</td>
-<td>None</td>
-<td>MULTILINESTRING ((-88.27857 41.92811, -88.2786...</td>
-</tr>
-</tbody>
-</table>
-
-</div>
-</div>
-</div>
-<p><br></p>
-<div id="22c2ed10" class="cell" data-execution_count="6">
-<div class="cell-output cell-output-stdout">
-<pre><code>"track_points" Layer:</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div>
-
-
-<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th"></th>
-<th data-quarto-table-cell-role="th">track_fid</th>
-<th data-quarto-table-cell-role="th">track_seg_id</th>
-<th data-quarto-table-cell-role="th">track_seg_point_id</th>
-<th data-quarto-table-cell-role="th">ele</th>
-<th data-quarto-table-cell-role="th">time</th>
-<th data-quarto-table-cell-role="th">magvar</th>
-<th data-quarto-table-cell-role="th">geoidheight</th>
-<th data-quarto-table-cell-role="th">name</th>
-<th data-quarto-table-cell-role="th">cmt</th>
-<th data-quarto-table-cell-role="th">desc</th>
-<th data-quarto-table-cell-role="th">...</th>
-<th data-quarto-table-cell-role="th">sym</th>
-<th data-quarto-table-cell-role="th">type</th>
-<th data-quarto-table-cell-role="th">fix</th>
-<th data-quarto-table-cell-role="th">sat</th>
-<th data-quarto-table-cell-role="th">hdop</th>
-<th data-quarto-table-cell-role="th">vdop</th>
-<th data-quarto-table-cell-role="th">pdop</th>
-<th data-quarto-table-cell-role="th">ageofdgpsdata</th>
-<th data-quarto-table-cell-role="th">dgpsid</th>
-<th data-quarto-table-cell-role="th">geometry</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">0</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td>241.046722</td>
-<td>2020-10-06 20:21:07+00:00</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>...</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>POINT (-88.27857 41.92811)</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">1</td>
-<td>0</td>
-<td>0</td>
-<td>1</td>
-<td>240.653961</td>
-<td>2020-10-06 20:21:07+00:00</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>...</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>POINT (-88.27862 41.9281)</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">2</td>
-<td>0</td>
-<td>0</td>
-<td>2</td>
-<td>240.572311</td>
-<td>2020-10-06 20:21:08+00:00</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>...</td>
-<td>None</td>
-<td>None</td>
-<td>None</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>NaN</td>
-<td>POINT (-88.27863 41.9281)</td>
-</tr>
-</tbody>
-</table>
-
-<p>3 rows × 27 columns</p>
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Dataframe Length: 2007 Rows</code></pre>
-</div>
-</div>
-<p>The <code>track_points</code> layer is more useful, since it provides a more granular representation of the data. For each point, it gives a coordinate, timestamp, and elevation. These can be used to derive statistics such as elapsed distance, running pace, elevation change, and later, for route geoclustering.</p>
-<div id="dbfefc48" class="cell" data-execution_count="7">
-<div class="cell-output cell-output-stdout">
-<pre><code>The data for a gpx track line plotted on a map:</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="showcase_files/figure-html/cell-8-output-2.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-</section>
-<section id="exploratory-data-analysis" class="level2">
-<h2 class="anchored" data-anchor-id="exploratory-data-analysis">2. Exploratory Data Analysis</h2>
-<p>EDA</p>
 </section>
 <section id="data-cleaning" class="level2">
-<h2 class="anchored" data-anchor-id="data-cleaning">3. Data Cleaning</h2>
+<h2 class="anchored" data-anchor-id="data-cleaning">2. Data Cleaning</h2>
 <p>The raw data must be converted into a convenient form, have certain constraints applied, and new features derived. As shown above, the raw data is spread across several different sources which must be integrated together.</p>
 <section id="gpx-file-list" class="level3">
-<h3 class="anchored" data-anchor-id="gpx-file-list">3.1 GPX File List</h3>
-<p>The GPX File list is the first piece of the puzzle. I will start by obtaining all of the filepaths.</p>
-<div id="3d0fce4d" class="cell" data-execution_count="8">
+<h3 class="anchored" data-anchor-id="gpx-file-list">2.1 GPX File List</h3>
+<p>The first piece of this puzzle is to assemble a list of all the GPX files. I will start by obtaining all of the filepaths.</p>
+<div id="ceec54de" class="cell" data-execution_count="3">
 <div class="cell-output cell-output-stdout">
 <pre><code>Here are the filepaths:</code></pre>
 </div>
@@ -584,15 +196,15 @@ window.Quarto = {
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">786</td>
+<td data-quarto-table-cell-role="th">583</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">965</td>
+<td data-quarto-table-cell-role="th">526</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">401</td>
+<td data-quarto-table-cell-role="th">803</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 </tbody>
@@ -606,7 +218,18 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </div>
 </div>
 <p>Each file name contains a date and time (referred to as a datetime). This datetime corresponds to the creation of the file. This is an important piece of information, so I will extract it from the file name and put it in its own column. It will also be useful to have a column with the date only.</p>
-<div id="32ca0bbc" class="cell" data-execution_count="9">
+<div id="0ba7c5b2" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parse track file dates</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"track_file_datetime"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file"</span>].<span class="bu">apply</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> x: datetime.strptime(</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        x.split(<span class="st">"/"</span>)[<span class="op">-</span><span class="dv">1</span>].removeprefix(<span class="st">"route_"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        .removesuffix(<span class="st">".gpx"</span>), <span class="st">"%Y-%m-</span><span class="sc">%d</span><span class="st">_%I.%M%p"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        .replace(tzinfo<span class="op">=</span>ZoneInfo(<span class="st">"America/Chicago"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"track_file_date"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file_datetime"</span>].dt.date</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="6d68aa99" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated table with dates extracted:</code></pre>
 </div>
@@ -625,22 +248,22 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">421</td>
+<td data-quarto-table-cell-role="th">3</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-08-03 07:22:00-05:00</td>
-<td>2020-08-03</td>
+<td>2019-10-04 15:41:00-05:00</td>
+<td>2019-10-04</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">408</td>
+<td data-quarto-table-cell-role="th">843</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-01-02 10:54:00-06:00</td>
-<td>2021-01-02</td>
+<td>2022-08-16 16:15:00-05:00</td>
+<td>2022-08-16</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">196</td>
+<td data-quarto-table-cell-role="th">147</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-08-13 15:30:00-05:00</td>
-<td>2020-08-13</td>
+<td>2020-08-31 15:47:00-05:00</td>
+<td>2020-08-31</td>
 </tr>
 </tbody>
 </table>
@@ -652,7 +275,7 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </div>
 </div>
 <p>The next thing I want to do is to filter for only the runs that occurred while I was in high school. Additionally, I want to bucket the runs into each year of high school and each season of the year. To do this, I went back into my calendar and manually created a table with the necessary information.</p>
-<div id="fb6e3f72" class="cell" data-execution_count="10">
+<div id="a6e804a4" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-stdout">
 <pre><code>Minimum Date: 2019-06-10 00:00:00-05:00
 Maximum Date 2023-05-16 00:00:00-05:00
@@ -793,7 +416,17 @@ Year and Seasons Buckets:</code></pre>
 </div>
 <p><br></p>
 <p>Now I will apply the minimum and maximum date constraints, and apply the bucketing.</p>
-<div id="b2964c76" class="cell" data-execution_count="11">
+<div id="85eb8d4b" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># bucket dates into seasons</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>df_tracks <span class="op">=</span> (</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    df_tracks.loc[(df_tracks[<span class="st">"track_file_datetime"</span>] <span class="op">&gt;=</span> seasons.MIN_DATE) <span class="op">&amp;</span> (df_tracks[<span class="st">"track_file_datetime"</span>] <span class="op">&lt;=</span> seasons.MAX_DATE)]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    .sort_values(<span class="st">"track_file_datetime"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    .reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"year"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file_datetime"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: seasons.bucket_date(x)[<span class="dv">0</span>])</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"season"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file_datetime"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: seasons.bucket_date(x)[<span class="dv">1</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="96ce8c3e" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated table with dates bucketed:</code></pre>
 </div>
@@ -814,28 +447,28 @@ Year and Seasons Buckets:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">372</td>
+<td data-quarto-table-cell-role="th">1048</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-08-28 12:31:00-05:00</td>
-<td>2020-08-28</td>
-<td>Sophomore</td>
-<td>XC Season</td>
+<td>2023-02-13 15:21:00-06:00</td>
+<td>2023-02-13</td>
+<td>Senior</td>
+<td>Track Season</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">303</td>
+<td data-quarto-table-cell-role="th">674</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-06-23 07:00:00-05:00</td>
-<td>2020-06-23</td>
-<td>Sophomore</td>
+<td>2021-07-08 09:26:00-05:00</td>
+<td>2021-07-08</td>
+<td>Junior</td>
 <td>Summer Training</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">274</td>
+<td data-quarto-table-cell-role="th">64</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-04-10 10:27:00-05:00</td>
-<td>2020-04-10</td>
+<td>2019-09-02 09:13:00-05:00</td>
+<td>2019-09-02</td>
 <td>Freshman</td>
-<td>Track Season</td>
+<td>XC Season</td>
 </tr>
 </tbody>
 </table>
@@ -849,10 +482,94 @@ Year and Seasons Buckets:</code></pre>
 <p><br></p>
 </section>
 <section id="workouts-xml" class="level3">
-<h3 class="anchored" data-anchor-id="workouts-xml">3.2 Workouts XML</h3>
-<p>As I mentioned earlier, these GPX tracks do not exclusively belong to running workouts. To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the “Workouts” table from the <code>.xml</code> file. We already looked at what the raw “Workouts” table contains.</p>
-<p>I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.</p>
-<div id="fe022870" class="cell" data-execution_count="12">
+<h3 class="anchored" data-anchor-id="workouts-xml">2.2 Workouts XML</h3>
+<p>The <code>.xml</code> file contains a <code>Workout</code> tag, which contains a data record for individual workouts. Not much useful information is provided in these records, just dates, a duration, and the type of activity. The type of activity is the most important field. Since the GPX tracks do not specify what activity they contain, I will need to link them to these records to identifiy which ones correspond to runs, and not to walks, bike rides, or hikes.</p>
+<div id="b14865a9" class="cell" data-execution_count="9">
+<div class="cell-output cell-output-stdout">
+<pre><code>Sample of 3 "Workout" records:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">workoutActivityType</th>
+<th data-quarto-table-cell-role="th">duration</th>
+<th data-quarto-table-cell-role="th">durationUnit</th>
+<th data-quarto-table-cell-role="th">sourceName</th>
+<th data-quarto-table-cell-role="th">sourceVersion</th>
+<th data-quarto-table-cell-role="th">creationDate</th>
+<th data-quarto-table-cell-role="th">startDate</th>
+<th data-quarto-table-cell-role="th">endDate</th>
+<th data-quarto-table-cell-role="th">device</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">186</td>
+<td>HKWorkoutActivityTypeRunning</td>
+<td>10.73110959927241</td>
+<td>min</td>
+<td>Ryan’s Apple&nbsp;Watch</td>
+<td>5.3.2</td>
+<td>2019-10-19 05:51:53 -0600</td>
+<td>2019-10-19 05:40:31 -0600</td>
+<td>2019-10-19 05:51:49 -0600</td>
+<td>&lt;&lt;HKDevice: 0x3003f2da0&gt;, name:Apple Watch, ma...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">344</td>
+<td>HKWorkoutActivityTypeElliptical</td>
+<td>30.04140973289808</td>
+<td>min</td>
+<td>Ryan’s Apple&nbsp;Watch</td>
+<td>6.2.1</td>
+<td>2020-04-15 07:49:38 -0600</td>
+<td>2020-04-15 07:07:00 -0600</td>
+<td>2020-04-15 07:49:37 -0600</td>
+<td>&lt;&lt;HKDevice: 0x3000d6940&gt;, name:Apple Watch, ma...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">368</td>
+<td>HKWorkoutActivityTypeRunning</td>
+<td>10.85147117376328</td>
+<td>min</td>
+<td>Ryan’s Apple&nbsp;Watch</td>
+<td>6.2.6</td>
+<td>2020-06-17 06:36:46 -0600</td>
+<td>2020-06-17 06:13:23 -0600</td>
+<td>2020-06-17 06:36:44 -0600</td>
+<td>&lt;&lt;HKDevice: 0x30000e5d0&gt;, name:Apple Watch, ma...</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dataframe Length: 1460 Rows</code></pre>
+</div>
+</div>
+<p>To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the “Workouts” table from the <code>.xml</code> file. I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.</p>
+<div id="e07ce93f" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parse data types</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>df_workouts[<span class="st">'creationDate'</span>] <span class="op">=</span> pd.to_datetime(df_workouts[<span class="st">'creationDate'</span>])</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>df_workouts[<span class="st">'startDate'</span>] <span class="op">=</span> pd.to_datetime(df_workouts[<span class="st">'startDate'</span>])</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>df_workouts[<span class="st">'endDate'</span>] <span class="op">=</span> pd.to_datetime(df_workouts[<span class="st">'endDate'</span>])</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>df_workouts[<span class="st">'duration'</span>] <span class="op">=</span> df_workouts[<span class="st">'duration'</span>].astype(<span class="bu">float</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># filter time period</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>df_workouts <span class="op">=</span> df_workouts.loc[(df_workouts[<span class="st">'startDate'</span>] <span class="op">&gt;=</span> pd.to_datetime(seasons.MIN_DATE, utc<span class="op">=</span><span class="va">True</span>)) <span class="op">&amp;</span> (df_workouts[<span class="st">'startDate'</span>] <span class="op">&lt;=</span> pd.to_datetime(seasons.MAX_DATE, utc<span class="op">=</span><span class="va">True</span>))]</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co"># get relevant data</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>df_workouts <span class="op">=</span> df_workouts.loc[df_workouts[<span class="st">'sourceName'</span>] <span class="op">!=</span> <span class="st">"Strava"</span>]</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>df_workouts <span class="op">=</span> df_workouts[[<span class="st">"workoutActivityType"</span>, <span class="st">"creationDate"</span>, <span class="st">"startDate"</span>, <span class="st">"endDate"</span>, <span class="st">"duration"</span>, <span class="st">"durationUnit"</span>]].rename(columns<span class="op">=</span>{<span class="st">"creationDate"</span>: <span class="st">"creation_datetime"</span>, <span class="st">"startDate"</span>: <span class="st">"start_datetime"</span>, <span class="st">"endDate"</span>: <span class="st">"end_datetime"</span>})</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>df_workouts <span class="op">=</span> df_workouts.sort_values(<span class="st">"start_datetime"</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="adcb3533" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-stdout">
 <pre><code>Workouts table after parsing:</code></pre>
 </div>
@@ -911,9 +628,9 @@ Year and Seasons Buckets:</code></pre>
 </div>
 </section>
 <section id="merge-gpx-file-list-with-workouts-xml" class="level3">
-<h3 class="anchored" data-anchor-id="merge-gpx-file-list-with-workouts-xml">3.3 Merge GPX File List with Workouts XML</h3>
+<h3 class="anchored" data-anchor-id="merge-gpx-file-list-with-workouts-xml">2.3 Merge GPX File List with Workouts XML</h3>
 <p>Both tables are prepared, but there is one obstacle remaining to merging them together. The <code>track_file_datetime</code> column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the <code>creation_datetime</code> column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each <code>track_file_datetime</code> in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.</p>
-<div id="1832ffa9" class="cell" data-execution_count="13">
+<div id="159551c2" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-stdout">
 <pre><code>Merged Dataframes:</code></pre>
 </div>
@@ -970,22 +687,839 @@ Year and Seasons Buckets:</code></pre>
 <p><br></p>
 </section>
 <section id="gpx-track-data-extraction" class="level3">
-<h3 class="anchored" data-anchor-id="gpx-track-data-extraction">3.4 GPX Track Data Extraction</h3>
-<p>Now that we have a clean dataset containing all of the runs, it’s time to look inside the GPX files themselves.</p>
-<section id="statistics" class="level4">
-<h4 class="anchored" data-anchor-id="statistics">3.4.1 Statistics</h4>
-<p>For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation.</p>
-<p>I would like to extract a few summary statistics from each run merge them into our master dataframe. These include: * The start and end times of the run * The start and end coordinates of the run * The duration of the run <span class="math inline">\(^*\)</span> * The total distance of the run <span class="math inline">\(^*\)</span> * The average pace of the run <span class="math inline">\(^*\)</span> * The total elevation change of the run <span class="math inline">\(^*\)</span></p>
-<p><span class="math inline">\(^*\)</span> These require decisions on handling pauses in the run.</p>
-</section>
+<h3 class="anchored" data-anchor-id="gpx-track-data-extraction">2.4 GPX Track Data Extraction</h3>
+<p>Now that we have a clean dataset containing all of the runs, it’s time to look inside the GPX files themselves. For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation. We can extract a lot of information from just this information.</p>
+<p>A single <code>.gpx</code> file can contain multiple data layers:</p>
+<div id="c79940e3" class="cell" data-execution_count="13">
+<div class="cell-output cell-output-stdout">
+<pre><code>GPX File Layers:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">name</th>
+<th data-quarto-table-cell-role="th">geometry_type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>waypoints</td>
+<td>Point</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>routes</td>
+<td>LineString</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>tracks</td>
+<td>MultiLineString</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>route_points</td>
+<td>Point</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>track_points</td>
+<td>Point</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p><br></p>
+<p>However, only two of the layers contain any data. These are the <code>tracks</code> layer and the <code>track_points</code> layer. I can load these individually using <code>geopandas.read_file()</code>. Most of the columns do not contain any data, but what really matters is the <code>geometry</code> column.</p>
+<div id="a60c6b6e" class="cell" data-execution_count="14">
+<div class="cell-output cell-output-stdout">
+<pre><code>"tracks" Layer:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">name</th>
+<th data-quarto-table-cell-role="th">cmt</th>
+<th data-quarto-table-cell-role="th">desc</th>
+<th data-quarto-table-cell-role="th">src</th>
+<th data-quarto-table-cell-role="th">link1_href</th>
+<th data-quarto-table-cell-role="th">link1_text</th>
+<th data-quarto-table-cell-role="th">link1_type</th>
+<th data-quarto-table-cell-role="th">link2_href</th>
+<th data-quarto-table-cell-role="th">link2_text</th>
+<th data-quarto-table-cell-role="th">link2_type</th>
+<th data-quarto-table-cell-role="th">number</th>
+<th data-quarto-table-cell-role="th">type</th>
+<th data-quarto-table-cell-role="th">geometry</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>Route 2020-10-06 3:55pm</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>NaN</td>
+<td>None</td>
+<td>MULTILINESTRING ((-88.27857 41.92811, -88.2786...</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p><br></p>
+<div id="ed6e8307" class="cell" data-execution_count="15">
+<div class="cell-output cell-output-stdout">
+<pre><code>"track_points" Layer:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">track_fid</th>
+<th data-quarto-table-cell-role="th">track_seg_id</th>
+<th data-quarto-table-cell-role="th">track_seg_point_id</th>
+<th data-quarto-table-cell-role="th">ele</th>
+<th data-quarto-table-cell-role="th">time</th>
+<th data-quarto-table-cell-role="th">magvar</th>
+<th data-quarto-table-cell-role="th">geoidheight</th>
+<th data-quarto-table-cell-role="th">name</th>
+<th data-quarto-table-cell-role="th">cmt</th>
+<th data-quarto-table-cell-role="th">desc</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">sym</th>
+<th data-quarto-table-cell-role="th">type</th>
+<th data-quarto-table-cell-role="th">fix</th>
+<th data-quarto-table-cell-role="th">sat</th>
+<th data-quarto-table-cell-role="th">hdop</th>
+<th data-quarto-table-cell-role="th">vdop</th>
+<th data-quarto-table-cell-role="th">pdop</th>
+<th data-quarto-table-cell-role="th">ageofdgpsdata</th>
+<th data-quarto-table-cell-role="th">dgpsid</th>
+<th data-quarto-table-cell-role="th">geometry</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>241.046722</td>
+<td>2020-10-06 20:21:07+00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>...</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>POINT (-88.27857 41.92811)</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>240.653961</td>
+<td>2020-10-06 20:21:07+00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>...</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>POINT (-88.27862 41.9281)</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>0</td>
+<td>0</td>
+<td>2</td>
+<td>240.572311</td>
+<td>2020-10-06 20:21:08+00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>...</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>POINT (-88.27863 41.9281)</td>
+</tr>
+</tbody>
+</table>
+
+<p>3 rows × 27 columns</p>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dataframe Length: 2007 Rows</code></pre>
+</div>
+</div>
+<p>The <code>track_points</code> layer is more useful, since it provides a more granular representation of the data. For each point, it gives a coordinate, timestamp, and elevation. These can be used to derive statistics such as elapsed distance, running pace, elevation change, and later, for route geoclustering.</p>
+<div id="6fa52c29" class="cell" data-execution_count="16">
+<div class="cell-output cell-output-stdout">
+<pre><code>The track points plotted on a map:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-17-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Before we get into detecting pauses and deriving statistics, I will properly parse the <code>track_points</code> dataframe and extract two helper columns, <code>dt</code> and <code>dx</code>, describing the change in time and position, respectively, from one track point to the next.</p>
+<div id="4e20ebb9" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parse file</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf[[<span class="st">"time"</span>, <span class="st">"ele"</span>, <span class="st">"geometry"</span>]]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">"time"</span>] <span class="op">=</span> pd.to_datetime(gdf[<span class="st">"time"</span>])</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf.rename(columns<span class="op">=</span>{<span class="st">"time"</span>: <span class="st">"datetime"</span>, <span class="st">"ele"</span>: <span class="st">"elevation"</span>})</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co"># create helper columns</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">'dt'</span>] <span class="op">=</span> gdf[<span class="st">"datetime"</span>].diff()</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>gdf_utm <span class="op">=</span> gdf.to_crs(gdf.estimate_utm_crs())</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">"dx"</span>] <span class="op">=</span> gdf_utm[<span class="st">"geometry"</span>].distance(gdf_utm[<span class="st">"geometry"</span>].shift())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="5d9a06cb" class="cell" data-execution_count="18">
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">datetime</th>
+<th data-quarto-table-cell-role="th">elevation</th>
+<th data-quarto-table-cell-role="th">geometry</th>
+<th data-quarto-table-cell-role="th">dt</th>
+<th data-quarto-table-cell-role="th">dx</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>2020-10-06 20:21:07+00:00</td>
+<td>241.046722</td>
+<td>POINT (-88.27857 41.92811)</td>
+<td>NaT</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2020-10-06 20:21:07+00:00</td>
+<td>240.653961</td>
+<td>POINT (-88.27862 41.9281)</td>
+<td>0 days 00:00:00</td>
+<td>4.004974</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2020-10-06 20:21:08+00:00</td>
+<td>240.572311</td>
+<td>POINT (-88.27863 41.9281)</td>
+<td>0 days 00:00:01</td>
+<td>0.829222</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
 <section id="pause-detection" class="level4">
-<h4 class="anchored" data-anchor-id="pause-detection">3.4.2 Pause Detection</h4>
+<h4 class="anchored" data-anchor-id="pause-detection">2.4.1 Pause Detection</h4>
+<p>Before I can extract summary statistics, it is necessary to account for gaps in the data which can distort the statistics. Many runs contain pauses, where I manually paused the run to wait to cross the street, take a break, or for a rest between workout segments. In some cases, the pause may be extra long because I forgot to resume the run.</p>
+<p>Left as-is, these pauses will result in calculating incorrect statistics like duration, distance, and pace. These also cause the map plots to interpolate the track line over the gap which looks funny and does not accurately reflect the run.</p>
+<div id="15db17a2" class="cell" data-execution_count="19">
+<div class="cell-output cell-output-stdout">
+<pre><code>Pauses lead to misleading maps like this one where I forgot to unpause the run:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-20-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Detecting pauses and splitting the track into segments will yield a more accurate plot:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-20-output-4.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Each run is nominally sampled every second, so pauses can be detected by any gaps in the time series greater than 1 second. To be on the safe side, I will use a gap threshold of 5 seconds.</p>
+<p>These are the required steps:</p>
+<ol type="1">
+<li>Locate indices of time-pauses in each run, with threshold of 5 seconds.</li>
+<li>Split the data into segments along the located indices by creating an indicator column.</li>
+<li>Remove segments less than 10 seconds, since these are mistakes with no meaningful value.</li>
+</ol>
+<div id="c016c2d1" class="cell" data-execution_count="20">
+<div class="cell-output cell-output-stdout">
+<pre><code>The next steps will continue using this track as an example:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-21-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="bef90571" class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># split into segments at pause indices</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pause_idx <span class="op">=</span> <span class="bu">list</span>(gdf.loc[gdf[<span class="st">'dt'</span>] <span class="op">&gt;</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)].index)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">'pause_segment'</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>segment_idx <span class="op">=</span> ([<span class="dv">0</span>] <span class="op">+</span> pause_idx <span class="op">+</span> [<span class="bu">len</span>(gdf)])</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(segment_idx) <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    gdf.loc[segment_idx[i]:segment_idx[i<span class="op">+</span><span class="dv">1</span>], <span class="st">'pause_segment'</span>] <span class="op">=</span> i</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="co"># remove segments less than 10 seconds</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf.groupby(<span class="st">"pause_segment"</span>, group_keys<span class="op">=</span><span class="va">False</span>).<span class="bu">filter</span>(<span class="kw">lambda</span> x: <span class="bu">len</span>(x) <span class="op">&gt;</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="b1262c6a" class="cell" data-execution_count="22">
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">datetime</th>
+<th data-quarto-table-cell-role="th">elevation</th>
+<th data-quarto-table-cell-role="th">geometry</th>
+<th data-quarto-table-cell-role="th">dt</th>
+<th data-quarto-table-cell-role="th">dx</th>
+<th data-quarto-table-cell-role="th">pause_segment</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">903</td>
+<td>2020-10-06 20:36:20+00:00</td>
+<td>234.526764</td>
+<td>POINT (-88.30539 41.92589)</td>
+<td>0 days 00:00:01</td>
+<td>3.426325</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">934</td>
+<td>2020-10-06 20:36:51+00:00</td>
+<td>234.357422</td>
+<td>POINT (-88.30547 41.92496)</td>
+<td>0 days 00:00:01</td>
+<td>3.151944</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">981</td>
+<td>2020-10-06 20:37:38+00:00</td>
+<td>234.227341</td>
+<td>POINT (-88.30417 41.92394)</td>
+<td>0 days 00:00:01</td>
+<td>3.237915</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1380</td>
+<td>2020-10-06 20:44:17+00:00</td>
+<td>235.330994</td>
+<td>POINT (-88.29419 41.92196)</td>
+<td>0 days 00:00:01</td>
+<td>3.229846</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1776</td>
+<td>2020-10-06 20:50:53+00:00</td>
+<td>235.073532</td>
+<td>POINT (-88.28451 41.92681)</td>
+<td>0 days 00:00:01</td>
+<td>3.217884</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of Pauses Detected: 3</code></pre>
+</div>
+</div>
+</section>
+<section id="rolling-pace" class="level4">
+<h4 class="anchored" data-anchor-id="rolling-pace">2.4.2 Rolling Pace</h4>
+<p>Before moving on to calculating summary statistics, I need to create a column for the current pace. The pace is my speed, usually measured in minutes per mile, so it is calculated by <code>dt</code> / <code>dx</code>. To calculate the pace, I will use a rolling average from the last 10 seconds, and importantly doing this separately within each pause segment. A side effect of using a rolling window of 10 seconds is that you cannot calculate it for the first 10 seconds, so we fill simply backfill the pace for the first 10 seconds.</p>
+<div id="10f66e0d" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate pace for each pause segment separately</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_rolling_pace(gdf):</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># use a 10 second rolling window for calculating pace</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    gdf[<span class="st">"pace (min/mi)"</span>] <span class="op">=</span> (gdf[<span class="st">"dt"</span>].cumsum().dt.total_seconds() <span class="op">/</span> <span class="dv">60</span>).diff(<span class="dv">10</span>) <span class="op">/</span> (gdf[<span class="st">"dx"</span>].cumsum() <span class="op">/</span> <span class="dv">1609</span>).diff(<span class="dv">10</span>)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># backfill nans that resulted from the rolling window</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    gdf[<span class="st">"pace (min/mi)"</span>] <span class="op">=</span> gdf[<span class="st">"pace (min/mi)"</span>].bfill()</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> gdf</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf.groupby(<span class="st">'pause_segment'</span>).<span class="bu">apply</span>(calculate_rolling_pace).reset_index().drop(columns<span class="op">=</span>[<span class="st">"level_1"</span>], errors<span class="op">=</span><span class="st">'ignore'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="4477e2aa" class="cell" data-execution_count="24">
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">pause_segment</th>
+<th data-quarto-table-cell-role="th">datetime</th>
+<th data-quarto-table-cell-role="th">elevation</th>
+<th data-quarto-table-cell-role="th">geometry</th>
+<th data-quarto-table-cell-role="th">dt</th>
+<th data-quarto-table-cell-role="th">dx</th>
+<th data-quarto-table-cell-role="th">pace (min/mi)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1025</td>
+<td>2</td>
+<td>2020-10-06 20:38:28+00:00</td>
+<td>233.224426</td>
+<td>POINT (-88.30384 41.9225)</td>
+<td>0 days 00:00:01</td>
+<td>3.287887</td>
+<td>7.966094</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1063</td>
+<td>2</td>
+<td>2020-10-06 20:39:06+00:00</td>
+<td>232.136993</td>
+<td>POINT (-88.30394 41.92134)</td>
+<td>0 days 00:00:01</td>
+<td>3.557255</td>
+<td>7.785770</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1080</td>
+<td>2</td>
+<td>2020-10-06 20:39:23+00:00</td>
+<td>232.101562</td>
+<td>POINT (-88.30381 41.92084)</td>
+<td>0 days 00:00:01</td>
+<td>3.370525</td>
+<td>8.039286</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1429</td>
+<td>2</td>
+<td>2020-10-06 20:45:12+00:00</td>
+<td>237.260635</td>
+<td>POINT (-88.29366 41.92333)</td>
+<td>0 days 00:00:01</td>
+<td>3.251331</td>
+<td>7.997658</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1816</td>
+<td>2</td>
+<td>2020-10-06 20:51:39+00:00</td>
+<td>235.480835</td>
+<td>POINT (-88.28401 41.92802)</td>
+<td>0 days 00:00:01</td>
+<td>3.278605</td>
+<td>8.390931</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="summary-statistics" class="level4">
+<h4 class="anchored" data-anchor-id="summary-statistics">2.4.3 Summary Statistics</h4>
+<p>I would like to extract a few summary statistics from each run merge them into our master dataframe. These include:</p>
+<ul>
+<li><strong>start_point</strong>: the first point in the run.</li>
+<li><strong>end_point</strong>: the last point in the run.</li>
+<li><strong>start_datetime</strong>: the first timestamp in the run.</li>
+<li><strong>end_datetime</strong>: the last timestamp in the run.</li>
+<li><strong>num_pauses</strong>: the number of pauses, where a pause is defined as a gap greater than five seconds.</li>
+<li><strong>total_duration</strong>: the total time elapsed from starting the run to ending the run, including all pauses.</li>
+<li><strong>active_duration</strong>: the total time elapsed from starting the run to ending the run, excluding all pauses.</li>
+<li><strong>total_distance</strong>: the total distance run in miles, excluding distance covered during pauses.</li>
+<li><strong>average_pace</strong>: the average pace during the run.</li>
+<li><strong>total_ascent</strong>: the total elevation increase throughout the run.</li>
+<li><strong>total_descent</strong>: the total elevation decrease throughout the run.</li>
+<li><strong>track_line</strong>: A MultiLineString object containing LineStrings that represent each continous segment between pauses.</li>
+</ul>
+<div id="5d1db6ef" class="cell" data-execution_count="25">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate number of pauses, where a pause is defined as dt &gt; 1 second</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>num_pauses <span class="op">=</span> <span class="bu">len</span>(gdf.loc[gdf[<span class="st">'dt'</span>] <span class="op">&gt;</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)])</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate the total duration, defined as the time between starting and ending the activity</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>total_duration <span class="op">=</span> gdf[<span class="st">'dt'</span>].<span class="bu">sum</span>()</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate the active duration, defined as the total time minus any pauses</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>active_duration <span class="op">=</span> gdf.loc[gdf[<span class="st">'dt'</span>] <span class="op">==</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>), <span class="st">'dt'</span>].<span class="bu">sum</span>()</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate total distance, excluding pauses</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>total_distance_miles <span class="op">=</span> gdf.loc[(gdf[<span class="st">'dt'</span>] <span class="op">==</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)), <span class="st">'dx'</span>].<span class="bu">sum</span>() <span class="op">/</span> <span class="dv">1609</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate average pace, exclude any pace over 10 min/mi since those are not representative of actual running</span></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>average_pace <span class="op">=</span> gdf.loc[gdf[<span class="st">"pace (min/mi)"</span>] <span class="op">&lt;</span> <span class="dv">10</span>, <span class="st">"pace (min/mi)"</span>].mean()</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate total ascent, excluding pauses</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>total_ascent <span class="op">=</span> gdf.loc[(gdf[<span class="st">'dt'</span>] <span class="op">==</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)), <span class="st">'elevation'</span>].diff().loc[gdf[<span class="st">'elevation'</span>].diff() <span class="op">&gt;</span> <span class="dv">0</span>].<span class="bu">sum</span>()</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate total descent, excluding pauses</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>total_descent <span class="op">=</span> gdf.loc[(gdf[<span class="st">'dt'</span>] <span class="op">==</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)), <span class="st">'elevation'</span>].diff().loc[gdf[<span class="st">'elevation'</span>].diff() <span class="op">&lt;</span> <span class="dv">0</span>].<span class="bu">sum</span>()</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a><span class="co"># split each pause segment into a LineString within a MultiLineString</span></span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>fixed_track_line <span class="op">=</span> shapely.MultiLineString([shapely.LineString(group[<span class="st">'geometry'</span>]) <span class="cf">for</span> _, group <span class="kw">in</span> gdf.groupby(<span class="st">'pause_segment'</span>)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="83ecb2dd" class="cell" data-execution_count="26">
+<div class="cell-output cell-output-stdout">
+<pre><code>Number of Pauses: 3
+Total Duration: 0 days 00:33:33
+Active Duration: 0 days 00:33:17
+Total Distance (miles): 4.084091745774948
+Average Pace (min/mi): 8.14015279647961
+Total Ascent (m): 27.357408000000078
+Total Descent (m): -30.719911000000053
+
+Fixed Track Line:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-27-output-2.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now I will apply these GPX data extraction steps to each GPX file, and add the resulting summary statistics and fixed track line to our master dataframe.</p>
+<div id="9d18e0f3" class="cell" data-execution_count="27">
+<div class="cell-output cell-output-stdout">
+<pre><code>Updated Master Dataframe:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">track_file</th>
+<th data-quarto-table-cell-role="th">track_file_datetime</th>
+<th data-quarto-table-cell-role="th">track_file_date</th>
+<th data-quarto-table-cell-role="th">start_datetime</th>
+<th data-quarto-table-cell-role="th">end_datetime</th>
+<th data-quarto-table-cell-role="th">num_pauses</th>
+<th data-quarto-table-cell-role="th">total_duration</th>
+<th data-quarto-table-cell-role="th">active_duration</th>
+<th data-quarto-table-cell-role="th">total_distance (mi)</th>
+<th data-quarto-table-cell-role="th">average_pace (min/mi)</th>
+<th data-quarto-table-cell-role="th">total_ascent (m)</th>
+<th data-quarto-table-cell-role="th">total_descent (m)</th>
+<th data-quarto-table-cell-role="th">year</th>
+<th data-quarto-table-cell-role="th">season</th>
+<th data-quarto-table-cell-role="th">in_stc</th>
+<th data-quarto-table-cell-role="th">start_point</th>
+<th data-quarto-table-cell-role="th">end_point</th>
+<th data-quarto-table-cell-role="th">track_line</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">57</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2019-08-31 09:02:00-05:00</td>
+<td>2019-08-31</td>
+<td>2019-08-31 14:00:08+00:00</td>
+<td>2019-08-31 14:02:09+00:00</td>
+<td>1</td>
+<td>0 days 00:02:01</td>
+<td>0 days 00:01:59</td>
+<td>0.252202</td>
+<td>7.810499</td>
+<td>1.250381</td>
+<td>-1.089706</td>
+<td>Freshman</td>
+<td>XC Season</td>
+<td>True</td>
+<td>POINT (-88.27736 41.92839)</td>
+<td>POINT (-88.27736 41.92833)</td>
+<td>MULTILINESTRING ((-88.27736 41.92839, -88.2773...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">82</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2019-09-12 16:46:00-05:00</td>
+<td>2019-09-12</td>
+<td>2019-09-12 21:30:07+00:00</td>
+<td>2019-09-12 21:46:02+00:00</td>
+<td>1</td>
+<td>0 days 00:15:55</td>
+<td>0 days 00:15:53</td>
+<td>1.247509</td>
+<td>9.653456</td>
+<td>11.980469</td>
+<td>-12.092133</td>
+<td>Freshman</td>
+<td>XC Season</td>
+<td>True</td>
+<td>POINT (-88.27938 41.92806)</td>
+<td>POINT (-88.27958 41.92812)</td>
+<td>MULTILINESTRING ((-88.27938 41.92806, -88.2794...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">115</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2019-09-26 15:55:00-05:00</td>
+<td>2019-09-26</td>
+<td>2019-09-26 20:52:47+00:00</td>
+<td>2019-09-26 20:55:20+00:00</td>
+<td>1</td>
+<td>0 days 00:02:33</td>
+<td>0 days 00:01:36</td>
+<td>0.247142</td>
+<td>6.563703</td>
+<td>1.195709</td>
+<td>-0.919967</td>
+<td>Freshman</td>
+<td>XC Season</td>
+<td>True</td>
+<td>POINT (-88.27714 41.92835)</td>
+<td>POINT (-88.27734 41.92834)</td>
+<td>MULTILINESTRING ((-88.27714 41.92835, -88.2771...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">198</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2020-01-02 09:10:00-06:00</td>
+<td>2020-01-02</td>
+<td>2020-01-02 14:53:56+00:00</td>
+<td>2020-01-02 15:10:12+00:00</td>
+<td>3</td>
+<td>0 days 00:16:16</td>
+<td>0 days 00:11:31</td>
+<td>1.256010</td>
+<td>8.584658</td>
+<td>29.719620</td>
+<td>-36.481125</td>
+<td>Freshman</td>
+<td>Winter Training</td>
+<td>True</td>
+<td>POINT (-88.29087 41.93235)</td>
+<td>POINT (-88.27989 41.92846)</td>
+<td>MULTILINESTRING ((-88.29087 41.93235, -88.2908...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">203</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2020-01-07 15:39:00-06:00</td>
+<td>2020-01-07</td>
+<td>2020-01-07 21:24:32+00:00</td>
+<td>2020-01-07 21:39:36+00:00</td>
+<td>2</td>
+<td>0 days 00:15:04</td>
+<td>0 days 00:15:00</td>
+<td>2.112952</td>
+<td>7.094655</td>
+<td>9.661819</td>
+<td>-7.837341</td>
+<td>Freshman</td>
+<td>Winter Training</td>
+<td>True</td>
+<td>POINT (-88.29864 41.92546)</td>
+<td>POINT (-88.29281 41.93259)</td>
+<td>MULTILINESTRING ((-88.29864 41.92546, -88.2986...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">477</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2021-02-18 16:02:00-06:00</td>
+<td>2021-02-18</td>
+<td>2021-02-18 21:00:19+00:00</td>
+<td>2021-02-18 22:02:48+00:00</td>
+<td>10</td>
+<td>0 days 00:45:22</td>
+<td>0 days 00:43:13</td>
+<td>5.578967</td>
+<td>7.708185</td>
+<td>35.582432</td>
+<td>-35.385533</td>
+<td>Sophomore</td>
+<td>Winter Training</td>
+<td>True</td>
+<td>POINT (-88.28007 41.9282)</td>
+<td>POINT (-88.27982 41.92842)</td>
+<td>MULTILINESTRING ((-88.28007 41.9282, -88.28005...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">547</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2021-04-27 15:23:00-05:00</td>
+<td>2021-04-27</td>
+<td>2021-04-27 19:48:25+00:00</td>
+<td>2021-04-27 20:23:52+00:00</td>
+<td>5</td>
+<td>0 days 00:35:27</td>
+<td>0 days 00:34:15</td>
+<td>4.109170</td>
+<td>8.324892</td>
+<td>28.352033</td>
+<td>-28.680097</td>
+<td>Sophomore</td>
+<td>Track Season</td>
+<td>True</td>
+<td>POINT (-88.27987 41.92857)</td>
+<td>POINT (-88.27985 41.92847)</td>
+<td>MULTILINESTRING ((-88.27987 41.92857, -88.2798...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">596</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2021-06-04 17:22:00-05:00</td>
+<td>2021-06-04</td>
+<td>2021-06-04 22:11:24+00:00</td>
+<td>2021-06-04 22:22:17+00:00</td>
+<td>2</td>
+<td>0 days 00:11:02</td>
+<td>0 days 00:10:51</td>
+<td>1.359804</td>
+<td>7.929102</td>
+<td>16.176208</td>
+<td>-16.476440</td>
+<td>Sophomore</td>
+<td>Track Season</td>
+<td>True</td>
+<td>POINT (-88.322 41.94847)</td>
+<td>POINT (-88.32232 41.94866)</td>
+<td>MULTILINESTRING ((-88.322 41.94847, -88.32198 ...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">774</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2022-02-04 15:27:00-06:00</td>
+<td>2022-02-04</td>
+<td>2022-02-04 20:50:16+00:00</td>
+<td>2022-02-04 21:27:31+00:00</td>
+<td>7</td>
+<td>0 days 00:35:08</td>
+<td>0 days 00:32:23</td>
+<td>4.213082</td>
+<td>7.677996</td>
+<td>28.613785</td>
+<td>-27.975648</td>
+<td>Junior</td>
+<td>Track Season</td>
+<td>True</td>
+<td>POINT (-88.27812 41.92807)</td>
+<td>POINT (-88.27958 41.92818)</td>
+<td>MULTILINESTRING ((-88.27812 41.92807, -88.2780...</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">989</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2023-03-20 06:11:00-05:00</td>
+<td>2023-03-20</td>
+<td>2023-03-20 11:02:40+00:00</td>
+<td>2023-03-20 11:11:59+00:00</td>
+<td>1</td>
+<td>0 days 00:09:21</td>
+<td>0 days 00:09:19</td>
+<td>1.196830</td>
+<td>7.802423</td>
+<td>7.884960</td>
+<td>-7.356691</td>
+<td>Senior</td>
+<td>Track Season</td>
+<td>True</td>
+<td>POINT (-88.28005 41.9274)</td>
+<td>POINT (-88.27952 41.92798)</td>
+<td>MULTILINESTRING ((-88.28005 41.9274, -88.28005...</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
 </section>
 </section>
 </section>
-<section id="route-classification" class="level2">
-<h2 class="anchored" data-anchor-id="route-classification">4. Route Classification</h2>
+<section id="route-clustering" class="level2">
+<h2 class="anchored" data-anchor-id="route-clustering">4. Route Clustering</h2>
 <p>Route Classification</p>
+</section>
+<section id="route-decomposition" class="level2">
+<h2 class="anchored" data-anchor-id="route-decomposition">5. Route Decomposition</h2>
 </section>
 <section id="run-type-classification" class="level2">
 <h2 class="anchored" data-anchor-id="run-type-classification">5. Run Type Classification</h2>

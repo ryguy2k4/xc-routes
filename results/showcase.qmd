@@ -10,8 +10,9 @@ jupyter: python3
 #| echo: false
 import pandas as pd
 import geopandas as gpd
+import shapely
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import matplotlib.pyplot as plt
 import glob
@@ -23,10 +24,6 @@ import plotting
 ## Table of Contents
 * [1. Introduction](#1-introduction)
     * [1.1 Goals](#11-goals)
-    * [1.2 Raw Data](#12-raw-data)
-        * [1.2.1 Records](#121-records)
-        * [1.2.2 Workouts](#122-workouts)
-        * [1.2.3 GPX Tracks](#123-gpx-tracks)
 * [2. Data Cleaning](#2-data-cleaning)
     * [2.1 GPX File List]()
         * [2.1.1 Parse Filename]()
@@ -58,6 +55,10 @@ import plotting
 
 I ran cross country and track all four years that I was in high school, and I recorded every single run on my Apple Watch. I believe that this is a very unique trove of data that has the potential to be very interesting and very personal.
 
+I obtained the raw data by exporting my Apple Health data. This export gave me a 2.23 GB `.xml` file and a folder containing 1,232 `.gpx` files.
+
+I have constructed this document to explain each decision I made while working with this data and present the results. My work on this project was very nonlinear and experimental, as is anything that is being figured out for the first time, so please be aware that I have taken my final process and presented it in a logical and linear order here. Note that not all of the code is visible, and that the code that is made visible is meant to illustrate the processes.
+
 ### 1.1 Goals
 
 * Learn how to work with geospatial data and tools:
@@ -72,37 +73,145 @@ I ran cross country and track all four years that I was in high school, and I re
     * Understand my training regimen and how it evolved over time.
     * Understand how I improved over my four years.
 
-### 1.2 Raw Data
 
-I obtained the raw data by exporting my Apple Health data. This export gave me a 2.23 GB `.xml` file and a folder containing 1,232 `.gpx` files.
 
-#### 1.2.1 Records
-
-The `.xml` file contains a `Record` tag, which contains a data record for a health statistic, such as *ActiveEnergyBurned*, *HeartRate*, or *EnvironmentalAudioExposure*. This will be useful for getting fitness statistics, such as heart rate, VO2 max, and calories burned.
+<!-- The `.xml` file contains a `Record` tag, which contains a data record for a health statistic, such as *ActiveEnergyBurned*, *HeartRate*, or *EnvironmentalAudioExposure*. This will be useful for getting fitness statistics, such as heart rate, VO2 max, and calories burned. -->
 
 ```{python}
 #| echo: false
-df = pd.read_parquet("../data/intermediate/record_data.parquet")
-print("Sample of 3 \"Record\" records:")
-display(df.sample(3))
-print(f"Dataframe Length: {len(df)} Rows")
+# df = pd.read_parquet("../data/intermediate/record_data.parquet")
+# print("Sample of 3 \"Record\" records:")
+# display(df.sample(3))
+# print(f"Dataframe Length: {len(df)} Rows")
 ```
 
-#### 1.2.2 Workouts
+## 2. Data Cleaning
+
+The raw data must be converted into a convenient form, have certain constraints applied, and new features derived. As shown above, the raw data is spread across several different sources which must be integrated together.
+
+### 2.1 GPX File List
+
+The first piece of this puzzle is to assemble a list of all the GPX files. I will start by obtaining all of the filepaths.
+
+```{python}
+#| echo: false
+path = "/Users/ryansponzilli/Developer/Python Projects/health-data/data/raw/apple_health/apple_health_export/workout-routes"
+df_tracks = pd.DataFrame({"track_file": glob.glob(path + "/*")})
+print("Here are the filepaths:")
+display(df_tracks.sample(3))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+print(f"Example file name: {df_tracks.iloc[0].values[0].split("/")[-1]}")
+```
+
+Each file name contains a date and time (referred to as a datetime). This datetime corresponds to the creation of the file. This is an important piece of information, so I will extract it from the file name and put it in its own column. It will also be useful to have a column with the date only.
+
+```{python}
+# parse track file dates
+df_tracks["track_file_datetime"] = df_tracks["track_file"].apply(
+    lambda x: datetime.strptime(
+        x.split("/")[-1].removeprefix("route_")
+        .removesuffix(".gpx"), "%Y-%m-%d_%I.%M%p")
+        .replace(tzinfo=ZoneInfo("America/Chicago")
+    )
+)
+df_tracks["track_file_date"] = df_tracks["track_file_datetime"].dt.date
+```
+```{python}
+#| echo: false
+print("Updated table with dates extracted:")
+display(df_tracks.sample(3))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+```
+
+The next thing I want to do is to filter for only the runs that occurred while I was in high school. Additionally, I want to bucket the runs into each year of high school and each season of the year. To do this, I went back into my calendar and manually created a table with the necessary information.
+
+```{python}
+#| echo: false
+print(f"Minimum Date: {seasons.MIN_DATE}")
+print(f"Maximum Date {seasons.MAX_DATE}")
+print("Year and Seasons Buckets:")
+display(seasons.seasons)
+```
+
+<br>
+
+Now I will apply the minimum and maximum date constraints, and apply the bucketing.
+
+```{python}
+# bucket dates into seasons
+df_tracks = (
+    df_tracks.loc[(df_tracks["track_file_datetime"] >= seasons.MIN_DATE) & (df_tracks["track_file_datetime"] <= seasons.MAX_DATE)]
+    .sort_values("track_file_datetime")
+    .reset_index(drop=True)
+)
+df_tracks["year"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[0])
+df_tracks["season"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[1])
+```
+```{python}
+#| echo: false
+print("Updated table with dates bucketed:")
+display(df_tracks.sample(3))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+```
+
+<br>
+
+### 2.2 Workouts XML
+
 The `.xml` file contains a `Workout` tag, which contains a data record for individual workouts. Not much useful information is provided in these records, just dates, a duration, and the type of activity. The type of activity is the most important field. Since the GPX tracks do not specify what activity they contain, I will need to link them to these records to identifiy which ones correspond to runs, and not to walks, bike rides, or hikes.
 
 ```{python}
 #| echo: false
-df = pd.read_parquet("../data/intermediate/workout_data.parquet")
+df_workouts = pd.read_parquet("../data/intermediate/workout_data.parquet")
 print("Sample of 3 \"Workout\" records:")
-display(df.sample(3))
-print(f"Dataframe Length: {len(df)} Rows")
+display(df_workouts.sample(3))
+print(f"Dataframe Length: {len(df_workouts)} Rows")
 ```
 
+To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the "Workouts" table from the `.xml` file. I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.
 
-#### 1.2.3 GPX Tracks
+```{python}
+# parse data types
+df_workouts['creationDate'] = pd.to_datetime(df_workouts['creationDate'])
+df_workouts['startDate'] = pd.to_datetime(df_workouts['startDate'])
+df_workouts['endDate'] = pd.to_datetime(df_workouts['endDate'])
+df_workouts['duration'] = df_workouts['duration'].astype(float)
 
-The `.gpx` files are the most valuable data source. They contain the geometry of the run, which consists of a sequence of latitude and longitude coordinates sampled approximately every second during the run. A single `.gpx` file can contain multiple data layers.
+# filter time period
+df_workouts = df_workouts.loc[(df_workouts['startDate'] >= pd.to_datetime(seasons.MIN_DATE, utc=True)) & (df_workouts['startDate'] <= pd.to_datetime(seasons.MAX_DATE, utc=True))]
+
+# get relevant data
+df_workouts = df_workouts.loc[df_workouts['sourceName'] != "Strava"]
+df_workouts = df_workouts[["workoutActivityType", "creationDate", "startDate", "endDate", "duration", "durationUnit"]].rename(columns={"creationDate": "creation_datetime", "startDate": "start_datetime", "endDate": "end_datetime"})
+df_workouts = df_workouts.sort_values("start_datetime").reset_index(drop=True)
+```
+```{python}
+#| echo: false
+print("Workouts table after parsing:")
+display(df_workouts.sample(3, random_state=5).sort_values("start_datetime"))
+print(f"Dataframe Length: {len(df_workouts)} Rows")
+```
+
+### 2.3 Merge GPX File List with Workouts XML
+
+Both tables are prepared, but there is one obstacle remaining to merging them together. The `track_file_datetime` column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the `creation_datetime` column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each `track_file_datetime` in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.
+
+```{python}
+#| echo: false
+df_merged = pd.read_parquet("../data/intermediate/track_info_merged.parquet")
+print("Merged Dataframes:")
+display(df_merged.head(3))
+print(f"Dataframe Length: {len(df_merged)} Rows")
+```
+
+Notice that we dropped from 1268 rows to 1033 rows. We have successfully removed all of the non-running GPX tracks from the dataframe.
+
+<br>
+
+### 2.4 GPX Track Data Extraction
+Now that we have a clean dataset containing all of the runs, it's time to look inside the GPX files themselves. For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation. We can extract a lot of information from just this information.
+
+A single `.gpx` file can contain multiple data layers:
 
 ```{python}
 #| echo: false
@@ -136,154 +245,194 @@ The `track_points` layer is more useful, since it provides a more granular repre
 
 ```{python}
 #| echo: false
-fig, ax = plt.subplots(figsize=(12, 5))
-print("The data for a gpx track line plotted on a map:")
+fig, ax = plt.subplots(figsize=(5,5))
+print("The track points plotted on a map:")
 plotting.plot_map(gdf, ax)
 plt.show()
 ```
 
-## 2. Data Cleaning
+Before we get into detecting pauses and deriving statistics, I will properly parse the `track_points` dataframe and extract two helper columns, `dt` and `dx`, describing the change in time and position, respectively, from one track point to the next.
 
-The raw data must be converted into a convenient form, have certain constraints applied, and new features derived. As shown above, the raw data is spread across several different sources which must be integrated together.
+```{python}
+# parse file
+gdf = gdf[["time", "ele", "geometry"]]
+gdf["time"] = pd.to_datetime(gdf["time"])
+gdf = gdf.rename(columns={"time": "datetime", "ele": "elevation"})
 
-### 2.1 GPX File List
-
-The GPX File list is the first piece of the puzzle. I will start by obtaining all of the filepaths.
+# create helper columns
+gdf['dt'] = gdf["datetime"].diff()
+gdf_utm = gdf.to_crs(gdf.estimate_utm_crs())
+gdf["dx"] = gdf_utm["geometry"].distance(gdf_utm["geometry"].shift())
+```
 
 ```{python}
 #| echo: false
-path = "/Users/ryansponzilli/Developer/Python Projects/health-data/data/raw/apple_health/apple_health_export/workout-routes"
-df_tracks = pd.DataFrame({"track_file": glob.glob(path + "/*")})
-print("Here are the filepaths:")
-display(df_tracks.sample(3))
-print(f"Dataframe Length: {len(df_tracks)} Rows")
-print(f"Example file name: {df_tracks.iloc[0].values[0].split("/")[-1]}")
+display(gdf.head(3))
 ```
 
-Each file name contains a date and time (referred to as a datetime). This datetime corresponds to the creation of the file. This is an important piece of information, so I will extract it from the file name and put it in its own column. It will also be useful to have a column with the date only.
+#### 2.4.1 Pause Detection
+Before I can extract summary statistics, it is necessary to account for gaps in the data which can distort the statistics. Many runs contain pauses, where I manually paused the run to wait to cross the street, take a break, or for a rest between workout segments. In some cases, the pause may be extra long because I forgot to resume the run.
+
+Left as-is, these pauses will result in calculating incorrect statistics like duration, distance, and pace. These also cause the map plots to interpolate the track line over the gap which looks funny and does not accurately reflect the run.
 
 ```{python}
 #| echo: false
-# parse track file dates
-df_tracks["track_file_datetime"] = df_tracks["track_file"].apply(
-    lambda x: datetime.strptime(
-        x.split("/")[-1].removeprefix("route_")
-        .removesuffix(".gpx"), "%Y-%m-%d_%I.%M%p")
-        .replace(tzinfo=ZoneInfo("America/Chicago")
-    )
-)
-df_tracks["track_file_date"] = df_tracks["track_file_datetime"].dt.date
-print("Updated table with dates extracted:")
-display(df_tracks.sample(3))
-print(f"Dataframe Length: {len(df_tracks)} Rows")
+fig, ax = plt.subplots(figsize=(6,6))
+pause_line = df_merged.loc[df_merged['track_file_datetime'] > pd.to_datetime(datetime(2023, 2, 7), utc=True)][0:1]
+print("Pauses lead to misleading maps like this one where I forgot to unpause the run:")
+gdf_temp = gpd.read_file(pause_line['track_file'].iloc[0], layer="tracks")
+plotting.plot_map(gdf_temp, ax)
+plt.show()
+
+#| echo: false
+print("Detecting pauses and splitting the track into segments will yield a more accurate plot:")
+
+gdf_temp_points = gpd.read_file(pause_line['track_file'].iloc[0], layer="track_points")
+# parse file
+gdf_temp_points = gdf_temp_points[["time", "ele", "geometry"]]
+gdf_temp_points["time"] = pd.to_datetime(gdf_temp_points["time"])
+gdf_temp_points = gdf_temp_points.rename(columns={"time": "datetime", "ele": "elevation"})
+# create helper columns
+gdf_temp_points['dt'] = gdf_temp_points["datetime"].diff()
+# detect pauses
+pause_idx = list(gdf_temp_points.loc[gdf_temp_points['dt'] > timedelta(seconds=1)].index)
+gdf_temp_points['pause_segment'] = None
+segment_idx = ([0] + pause_idx + [len(gdf_temp_points)])
+for i in range(len(segment_idx) - 1):
+    gdf_temp_points.loc[segment_idx[i]:segment_idx[i+1], 'pause_segment'] = i
+# remove segments less than 10 seconds
+gdf_temp_points = gdf_temp_points.groupby("pause_segment", group_keys=False).filter(lambda x: len(x) > 10)
+
+fig, ax = plt.subplots(figsize=(6,6))
+gdf_temp.loc[gdf_temp.index == 0, 'geometry'] = shapely.MultiLineString([shapely.LineString(group['geometry']) for _, group in gdf_temp_points.groupby('pause_segment')])
+plotting.plot_map(gdf_temp, ax)
+plt.show()
 ```
 
-The next thing I want to do is to filter for only the runs that occurred while I was in high school. Additionally, I want to bucket the runs into each year of high school and each season of the year. To do this, I went back into my calendar and manually created a table with the necessary information.
+Each run is nominally sampled every second, so pauses can be detected by any gaps in the time series greater than 1 second. To be on the safe side, I will use a gap threshold of 5 seconds.
+
+These are the required steps:
+
+1. Locate indices of time-pauses in each run, with threshold of 5 seconds.
+2. Split the data into segments along the located indices by creating an indicator column.
+3. Remove segments less than 10 seconds, since these are mistakes with no meaningful value.
 
 ```{python}
 #| echo: false
-print(f"Minimum Date: {seasons.MIN_DATE}")
-print(f"Maximum Date {seasons.MAX_DATE}")
-print("Year and Seasons Buckets:")
-display(seasons.seasons)
+fig, ax = plt.subplots(figsize=(5,5))
+print("The rest of this section will continue using this track as an example:")
+plotting.plot_map(gdf, ax)
+plt.show()
 ```
 
-<br>
+```{python}
+# split into segments at pause indices
+pause_idx = list(gdf.loc[gdf['dt'] > timedelta(seconds=1)].index)
+gdf['pause_segment'] = None
+segment_idx = ([0] + pause_idx + [len(gdf)])
+for i in range(len(segment_idx) - 1):
+    gdf.loc[segment_idx[i]:segment_idx[i+1], 'pause_segment'] = i
 
-Now I will apply the minimum and maximum date constraints, and apply the bucketing.
+# remove segments less than 10 seconds
+gdf = gdf.groupby("pause_segment", group_keys=False).filter(lambda x: len(x) > 10)
+```
 
 ```{python}
 #| echo: false
-# bucket dates into seasons
-df_tracks = (
-    df_tracks.loc[(df_tracks["track_file_datetime"] >= seasons.MIN_DATE) & (df_tracks["track_file_datetime"] <= seasons.MAX_DATE)]
-    .sort_values("track_file_datetime")
-    .reset_index(drop=True)
-)
-df_tracks["year"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[0])
-df_tracks["season"] = df_tracks["track_file_datetime"].apply(lambda x: seasons.bucket_date(x)[1])
-print("Updated table with dates bucketed:")
-display(df_tracks.sample(3))
-print(f"Dataframe Length: {len(df_tracks)} Rows")
+display(gdf.sample(5).sort_values("datetime"))
+num_pauses = len(gdf.loc[gdf['dt'] > timedelta(seconds=1)])
+print(f"Number of Pauses Detected: {num_pauses}")
 ```
 
-<br>
+#### 2.4.2 Rolling Pace
+Before moving on to calculating summary statistics, I need to create a column for the current pace. The pace is my speed, usually measured in minutes per mile, so it is calculated by `dt` / `dx`. To calculate the pace, I will use a rolling average from the last 10 seconds, and importantly doing this separately within each pause segment. A side effect of using a rolling window of 10 seconds is that you cannot calculate it for the first 10 seconds, so we fill simply backfill the pace for the first 10 seconds.
 
-### 2.2 Workouts XML
-
-As I mentioned earlier, these GPX tracks do not exclusively belong to running workouts. To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the "Workouts" table from the `.xml` file. We already looked at what the raw "Workouts" table contains.
-
-I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.
+```{python}
+# calculate pace for each pause segment separately
+def calculate_rolling_pace(gdf):
+    # use a 10 second rolling window for calculating pace
+    gdf["pace (min/mi)"] = (gdf["dt"].cumsum().dt.total_seconds() / 60).diff(10) / (gdf["dx"].cumsum() / 1609).diff(10)
+    # backfill nans that resulted from the rolling window
+    gdf["pace (min/mi)"] = gdf["pace (min/mi)"].bfill()
+    return gdf
+gdf = gdf.groupby('pause_segment').apply(calculate_rolling_pace).reset_index().drop(columns=["level_1"], errors='ignore')
+```
 
 ```{python}
 #| echo: false
-df_workouts = pd.read_parquet("../data/intermediate/workout_data.parquet")
-# parse data types
-df_workouts['creationDate'] = pd.to_datetime(df_workouts['creationDate'])
-df_workouts['startDate'] = pd.to_datetime(df_workouts['startDate'])
-df_workouts['endDate'] = pd.to_datetime(df_workouts['endDate'])
-df_workouts['duration'] = df_workouts['duration'].astype(float)
-
-# filter time period
-df_workouts = df_workouts.loc[(df_workouts['startDate'] >= pd.to_datetime(seasons.MIN_DATE, utc=True)) & (df_workouts['startDate'] <= pd.to_datetime(seasons.MAX_DATE, utc=True))]
-
-# get relevant data
-df_workouts = df_workouts.loc[df_workouts['sourceName'] != "Strava"]
-df_workouts = df_workouts[["workoutActivityType", "creationDate", "startDate", "endDate", "duration", "durationUnit"]].rename(columns={"creationDate": "creation_datetime", "startDate": "start_datetime", "endDate": "end_datetime"})
-df_workouts = df_workouts.sort_values("start_datetime").reset_index(drop=True)
-
-print("Workouts table after parsing:")
-display(df_workouts.sample(3, random_state=5))
-print(f"Dataframe Length: {len(df_workouts)} Rows")
+display(gdf.sample(5).sort_values("datetime"))
 ```
 
-### 2.3 Merge GPX File List with Workouts XML
-
-Both tables are prepared, but there is one obstacle remaining to merging them together. The `track_file_datetime` column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the `creation_datetime` column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each `track_file_datetime` in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.
-
-```{python}
-#| echo: false
-df_merged = pd.read_parquet("../data/intermediate/track_info_merged.parquet")
-print("Merged Dataframes:")
-display(df_merged.head(3))
-print(f"Dataframe Length: {len(df_merged)} Rows")
-```
-
-Notice that we dropped from 1268 rows to 1033 rows. We have successfully removed all of the non-running GPX tracks from the dataframe.
-
-<br>
-
-### 2.4 GPX Track Data Extraction
-Now that we have a clean dataset containing all of the runs, it's time to look inside the GPX files themselves.
-
-#### 2.4.1 Statistics
-For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation.
-
+#### 2.4.3 Summary Statistics
 I would like to extract a few summary statistics from each run merge them into our master dataframe. These include:
 
-* The start and end times of the run
-* The start and end coordinates of the run
-* The duration of the run $^*$
-* The total distance of the run $^*$
-* The average pace of the run $^*$
-* The total elevation change of the run $^*$
+* **start_point**: the first point in the run.
+* **end_point**: the last point in the run.
+* **start_datetime**: the first timestamp in the run.
+* **end_datetime**: the last timestamp in the run.
+* **num_pauses**: the number of pauses, where a pause is defined as a gap greater than five seconds.
+* **total_duration**: the total time elapsed from starting the run to ending the run, including all pauses.
+* **active_duration**: the total time elapsed from starting the run to ending the run, excluding all pauses.
+* **total_distance**: the total distance run in miles, excluding distance covered during pauses.
+* **average_pace**: the average pace during the run.
+* **total_ascent**: the total elevation increase throughout the run.
+* **total_descent**: the total elevation decrease throughout the run.
+* **track_line**: A MultiLineString object containing LineStrings that represent each continous segment between pauses.
 
-$^*$ These require decisions on handling pauses in the run.
+```{python}
+# calculate number of pauses, where a pause is defined as dt > 1 second
+num_pauses = len(gdf.loc[gdf['dt'] > timedelta(seconds=1)])
 
-#### 2.4.2 Pause Detection
-Many runs contain pauses, where I manually paused the run to wait to cross the street, take a break, or for a rest between workout segments. In some cases, the pause may be extra long because I forget to resume the run.
+# calculate the total duration, defined as the time between starting and ending the activity
+total_duration = gdf['dt'].sum()
 
-Left as-is, these pauses will result in calculating incorrect statistics like duration, distance, and pace.
+# calculate the active duration, defined as the total time minus any pauses
+active_duration = gdf.loc[gdf['dt'] == timedelta(seconds=1), 'dt'].sum()
 
-Pauses can be detected in both distance and time, and there are two cases: time-pauses and distance-gaps. The former is a gap in the timestamp and may or may not also have a corresponding distance gap. A distance gap is a discontinuity in the track line and always has a corresponding time-pause.
+# calculate total distance, excluding pauses
+total_distance_miles = gdf.loc[(gdf['dt'] == timedelta(seconds=1)), 'dx'].sum() / 1609
 
-1. Detect number of time-pauses per run, with threshold of 5 seconds.
-2. Detect number of distance-gaps per run, with threshold of 50 meters, split distance pauses into multiple line segments.
-3. Create total_duration and active_duration features.
+# calculate average pace, exclude any pace over 10 min/mi since those are not representative of actual running
+average_pace = gdf.loc[gdf["pace (min/mi)"] < 10, "pace (min/mi)"].mean()
 
+# calculate total ascent, excluding pauses
+total_ascent = gdf.loc[(gdf['dt'] == timedelta(seconds=1)), 'elevation'].diff().loc[gdf['elevation'].diff() > 0].sum()
 
-## 4. Route Classification
+# calculate total descent, excluding pauses
+total_descent = gdf.loc[(gdf['dt'] == timedelta(seconds=1)), 'elevation'].diff().loc[gdf['elevation'].diff() < 0].sum()
+
+# split each pause segment into a LineString within a MultiLineString
+fixed_track_line = shapely.MultiLineString([shapely.LineString(group['geometry']) for _, group in gdf.groupby('pause_segment')])
+```
+
+```{python}
+#| echo: false
+print(f"Number of Pauses: {num_pauses}")
+print(f"Total Duration: {total_duration}")
+print(f"Active Duration: {active_duration}")
+print(f"Total Distance (miles): {total_distance_miles}")
+print(f"Average Pace (min/mi): {average_pace}")
+print(f"Total Ascent (m): {total_ascent}")
+print(f"Total Descent (m): {total_descent}")
+print("")
+print("Fixed Track Line:")
+display(fixed_track_line)
+```
+
+Now I will apply these GPX data extraction steps to each GPX file, and add the resulting summary statistics and fixed track line to our master dataframe.
+
+```{python}
+#| echo: false
+print("Updated Master Dataframe:")
+gdf_track_info = gpd.read_parquet("../data/cleaned/track_info.parquet")
+display(gdf_track_info.sample(10).sort_values("track_file_datetime"))
+```
+
+## 4. Route Clustering
 Route Classification
+
+## 5. Route Decomposition
+
 
 ## 5. Run Type Classification
 Run Type Classification

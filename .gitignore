@@ -9,3 +9,6 @@ wheels/
 # Virtual environments
 .venv
 data/raw
+
+# other
+results/showcase_files

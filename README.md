@@ -1,15 +1,34 @@
 # XC Routes GIS Project
 
-* Update Pause Detection
-    * Distinguish between pauses in time and in distance
-    * Create variable for number of pauses?
-    * Make elapsed distance skip over pauses
-    * Make pause detection have a absolute threshold instead of relative
 * Resampling for route matching?
 * Need a coupled approach to route detection and run type assignment
     * Canonical routes include both workout segments, and WU/CD and workout all in one track. It would be simpler to first combine all WU/Workout/CD runs into one track line, and compare the combined track line against the canonical workout routes.
     * At the same time, detection and merging of workout segments could be aided by seeing if the combined route has a good match to a canonical workout route, or if the segments match to canonical workout segments.
 * Experimenting with route detection by calculating similarity to canonical routes does sort of work, but it seems like route decomposition would do a better and more accurate job.
+
+## Route Decomposition
+GPS points
+        │
+        ▼
+H3 cells
+        │
+        ▼
+Embedding layer
+        │
+        ▼
+Transformer
+        │
+        ▼
+Segment label or unknown segment for each point, compressing duplicates
+        │                           │
+        ▼                           ▼
+Route Segments: S1 → S2 → S4    Route Segments: S1 → Unknown
+        |                           │ 
+        ▼                           ▼
+Route lookup                    Region Clustering
+        │                           │
+        ▼                           ▼
+Route: Dog Leg                 Route: LeRoy Oakes
 
 
 
