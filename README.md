@@ -6,6 +6,11 @@
     * At the same time, detection and merging of workout segments could be aided by seeing if the combined route has a good match to a canonical workout route, or if the segments match to canonical workout segments.
 * Experimenting with route detection by calculating similarity to canonical routes does sort of work, but it seems like route decomposition would do a better and more accurate job.
 
+Tasks:
+* For workouts that were aggregated, the distinction between a pause and a segment has been lost.
+* Run Type Column (Normal, Long, Hills, Tempo, Fartlek, Track)
+* Route Column (Named Route, None)
+
 ## Route Decomposition
 GPS points
         │

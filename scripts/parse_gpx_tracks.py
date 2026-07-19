@@ -21,6 +21,7 @@ df_tracks["track_file_datetime"] = df_tracks["track_file"].apply(
     )
 )
 df_tracks["track_file_date"] = df_tracks["track_file_datetime"].dt.date
+df_tracks["day_of_week"] = df_tracks["track_file_datetime"].dt.day_name()
 
 # filter for tracks within my high school career
 df_tracks = (
@@ -69,10 +70,6 @@ def extract_track_info(gpx_file):
     # remove segments less than 10 seconds, since these are mistakes with no meaningful value
     if len(gdf) > 10:
         gdf = gdf.groupby("pause_segment", group_keys=False).filter(lambda x: len(x) > 10)
-    else:
-        # prevent the entire dataset from being removed and messing things up later
-        # should probably filter for total length earlier in this script
-        print(f"{gpx_file} has length {len(gdf)}")
 
     # calculate pace for each pause segment separately
     def calculate_rolling_pace(gdf):
@@ -126,22 +123,81 @@ def extract_track_info(gpx_file):
 stat_dicts = df_tracks['track_file'].apply(lambda x: extract_track_info(x))
 df_tracks = pd.concat([df_tracks, pd.DataFrame(stat_dicts.to_list())], axis=1)
 
-# add indicator column for routes within St. Charles
-def in_stc(geom):
-    STC_LAT_MIN = 41.866329
-    STC_LAT_MAX = 41.951764
-    STC_LON_MIN = -88.382261
-    STC_LON_MAX = -88.240518
-    lon = geom.coords[0][0]
-    lat = geom.coords[0][1]
+# turn the dataframe into a geodataframe
+df_tracks = gpd.GeoDataFrame(df_tracks, geometry="track_line", crs="EPSG:4326")
+df_tracks["start_point"] = gpd.GeoSeries(df_tracks["start_point"], crs=df_tracks.crs)
+df_tracks["end_point"] = gpd.GeoSeries(df_tracks["end_point"], crs=df_tracks.crs)
 
-    return (
-        (lon >= STC_LON_MIN)
-        & (lon <= STC_LON_MAX)
-        & (lat >= STC_LAT_MIN)
-        & (lat <= STC_LAT_MAX)
-    )
-df_tracks['in_stc'] = df_tracks['start_point'].apply(lambda x: in_stc(x))
+# filter out very short runs
+df_tracks = df_tracks[df_tracks['total_distance (mi)'] > 0.1]
+
+df_tracks.to_parquet("data/intermediate/track_info_unagg.parquet")
+
+# isolate dates with multiple runs for further processing
+counts = df_tracks[["track_file_date", "start_datetime"]].groupby("track_file_date").agg("count")
+multple_dates = counts.loc[counts["start_datetime"] > 1].index
+# dataframe with single-run dates
+gdf_track_info_singles = df_tracks.loc[~df_tracks['track_file_date'].isin(multple_dates)]
+# dataframe with multiple-run dates
+gdf_track_info_multiples = df_tracks.loc[df_tracks['track_file_date'].isin(multple_dates)]
+
+# define aggregation
+def agg_track_lines(series):
+    lines = []
+    for mline in series:
+        for line in mline.geoms:
+            lines.append(line)
+    return shapely.MultiLineString(lines)
+agg_dict = {
+    "track_file": 'sum',
+    "track_file_datetime": 'min',
+    "day_of_week": 'first',
+    "start_datetime": 'first',
+    "end_datetime": 'last',
+    "year": 'first',
+    "season": 'first',
+    "num_pauses": 'sum',
+    "total_duration": 'sum',
+    "active_duration": 'sum',
+    "total_distance (mi)": 'sum',
+    "average_pace (min/mi)": 'mean',
+    "total_ascent (m)": 'sum',
+    "total_descent (m)": 'sum',
+    "start_point": 'first',
+    "end_point": 'last',
+    "track_line": agg_track_lines
+}
+
+# loop through dates with multiple runs, identify doubles, and combine the rest
+rows = []
+for group_name, group in gdf_track_info_multiples.groupby("track_file_date"):
+    split = group['start_datetime'].diff().apply(lambda x: x.total_seconds()/3600) > 3
+    if split.sum() > 0:
+        # add condensed first session
+        temp = group[:split.argmax()].groupby("track_file_date").agg(agg_dict).reset_index()
+        temp["num_pauses"] = temp["num_pauses"] + len(group[:split.argmax()]) - 1
+        rows.append(temp)
+
+        # add condensed second session
+        temp = group[split.argmax():].groupby("track_file_date").agg(agg_dict).reset_index()
+        temp["num_pauses"] = temp["num_pauses"] + len(group[split.argmax():]) - 1
+        rows.append(temp)
+    else:
+        # add condensed session
+        rows.append(group.groupby("track_file_date").agg(agg_dict).reset_index())
+gdf_track_info_multiples_combined = pd.concat(rows)
+
+# recombine with single runs
+df_tracks = pd.concat([gdf_track_info_singles, gdf_track_info_multiples_combined]).sort_values("track_file_datetime").reset_index(drop=True)
+
+# determine the region that this run started in
+regions = gpd.read_file("data/raw/regions.geojson")
+def get_region(point):
+    for i, row in regions.iterrows():
+        if point.within(row['geometry']):
+            return row['Region']
+    return "Other"
+df_tracks["region"] = df_tracks["start_point"].apply(get_region)
 
 # organize columns
 df_tracks = df_tracks[
@@ -149,6 +205,7 @@ df_tracks = df_tracks[
         "track_file",
         "track_file_datetime",
         "track_file_date",
+        "day_of_week",
         "start_datetime",
         "end_datetime",
         "num_pauses",
@@ -160,15 +217,11 @@ df_tracks = df_tracks[
         "total_descent (m)",
         "year",
         "season",
-        "in_stc",
+        "region",
         "start_point",
         "end_point",
         "track_line",
     ]
 ]
 
-# turn the dataframe into a geodataframe
-df_track_info = gpd.GeoDataFrame(df_tracks, geometry="track_line", crs="EPSG:4326")
-df_track_info["start_point"] = gpd.GeoSeries(df_track_info["start_point"], crs=df_track_info.crs)
-df_track_info["end_point"] = gpd.GeoSeries(df_track_info["end_point"], crs=df_track_info.crs)
-df_track_info.to_parquet("data/cleaned/track_info.parquet")
+df_tracks.to_parquet("data/cleaned/track_info.parquet")

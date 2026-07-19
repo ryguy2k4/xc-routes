@@ -428,6 +428,11 @@ gdf_track_info = gpd.read_parquet("../data/cleaned/track_info.parquet")
 display(gdf_track_info.sample(10).sort_values("track_file_datetime"))
 ```
 
+#### 2.4.4 Activity Recombination
+Sometimes, I chose to record a workout all in the same recorded activity, and other times I broke it into several recorded activities. I need to standardize this. All workouts should be combined into one activity.
+
+First, identify all dates with more than one recorded activity. Then take these and group them by date. Within each group, first determine if one of the runs is a double and keep it separate, and then combine the rest of the activities. This will combine both workouts and accidental splits together.
+
 ## 4. Route Clustering
 Route Classification
 
