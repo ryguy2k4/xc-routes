@@ -711,6 +711,22 @@ wheels = [
 ]
 
 [[package]]
+name = "ipyleaflet"
+version = "0.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "branca" },
+    { name = "ipywidgets" },
+    { name = "jupyter-leaflet" },
+    { name = "traittypes" },
+    { name = "xyzservices" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d8/f2/00facc58a1e9581d9365df5761bf7e12f9fa7132132111f6ee484fd58e42/ipyleaflet-0.20.0.tar.gz", hash = "sha256:098f317dd63c4bcac5176d5b78d40d5758c623f7cd013f0d0c9d7a70cefcdb34", size = 28932, upload-time = "2025-06-13T08:33:43.441Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/49/69/e9858f2c0b99bf9f036348d1c84b8026f438bb6875effe6a9bcd9883dada/ipyleaflet-0.20.0-py3-none-any.whl", hash = "sha256:b4c20ddc0b17d68e226cd3367ca2215a4db7e2b14374468c0eeaa54b53e4d173", size = 31578, upload-time = "2025-06-13T08:33:37.353Z" },
+]
+
+[[package]]
 name = "ipython"
 version = "9.14.1"
 source = { registry = "https://pypi.org/simple" }
@@ -946,6 +962,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/18/f8/475c4241b2b75af0deaae453ed003c6c851766dbc44d332d8baf245dc931/jupyter_events-0.12.1.tar.gz", hash = "sha256:faff25f77218335752f35f23c5fe6e4a392a7bd99a5939ccb9b8fbf594636cf3", size = 62854, upload-time = "2026-04-20T23:17:50.66Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/6c/6fcde0c8f616ed360ffd3587f7db9e225a7e62b583a04494d2f069cf64ea/jupyter_events-0.12.1-py3-none-any.whl", hash = "sha256:c366585253f537a627da52fa7ca7410c5b5301fe893f511e7b077c2d93ec8bcf", size = 19512, upload-time = "2026-04-20T23:17:48.927Z" },
+]
+
+[[package]]
+name = "jupyter-leaflet"
+version = "0.20.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/db/870bd0f8995c9359ea1501ba82ed7daf40bbbac95efeca80a35f3705929b/jupyter_leaflet-0.20.0.tar.gz", hash = "sha256:ad826dd7976a2b6d8b91d762c25a69a44f123b7b3bd1acaba236bd9af8e68cb4", size = 1306561, upload-time = "2025-06-13T08:33:46.282Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/95/ffe543060eb3b1570d78c3f2c1948c640a6758ff5c6479c27e474819115b/jupyter_leaflet-0.20.0-py3-none-any.whl", hash = "sha256:2e27ce83647316424f04845e3a6af35e1ee44c177c318a145646b11f4afe0764", size = 1107090, upload-time = "2025-06-13T08:33:40.416Z" },
 ]
 
 [[package]]
@@ -2603,6 +2628,18 @@ wheels = [
 ]
 
 [[package]]
+name = "traittypes"
+version = "0.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "traitlets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/8d/37d686f52dfbccc47b857751531ffdec262b0f35158dd3b306030dafdb83/traittypes-0.2.3.tar.gz", hash = "sha256:212feed38d566d772648768b78d3347c148ef23915b91c02078188e631316c86", size = 16003, upload-time = "2025-10-22T11:06:09.952Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8d/c0/fdf9d3ee103ce66a55f0532835ad5e154226c5222423c6636ba049dc42fc/traittypes-0.2.3-py2.py3-none-any.whl", hash = "sha256:49016082ce740d6556d9bb4672ee2d899cd14f9365f17cbb79d5d96b47096d4e", size = 8130, upload-time = "2025-10-22T11:06:08.824Z" },
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2710,6 +2747,8 @@ dependencies = [
     { name = "geopandas" },
     { name = "h3" },
     { name = "ipykernel" },
+    { name = "ipyleaflet" },
+    { name = "ipywidgets" },
     { name = "jupyter" },
     { name = "mapclassify" },
     { name = "matplotlib" },
@@ -2727,6 +2766,8 @@ requires-dist = [
     { name = "geopandas", specifier = ">=1.1.3" },
     { name = "h3", specifier = ">=4.5.0" },
     { name = "ipykernel", specifier = ">=7.3.0" },
+    { name = "ipyleaflet", specifier = ">=0.20.0" },
+    { name = "ipywidgets", specifier = ">=8.1.8" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "mapclassify", specifier = ">=2.10.0" },
     { name = "matplotlib", specifier = ">=3.11.0" },
