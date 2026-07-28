@@ -10,11 +10,13 @@ jupyter: python3
 #| echo: false
 import pandas as pd
 import geopandas as gpd
+import contextily as cx
 import shapely
 import numpy as np
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import matplotlib.pyplot as plt
+import seaborn as sns
 import glob
 
 import seasons
@@ -424,14 +426,126 @@ Now I will apply these GPX data extraction steps to each GPX file, and add the r
 ```{python}
 #| echo: false
 print("Updated Master Dataframe:")
-gdf_track_info = gpd.read_parquet("../data/cleaned/track_info.parquet")
+gdf_track_info = gpd.read_parquet("../data/intermediate/track_info_unagg.parquet")
 display(gdf_track_info.sample(10).sort_values("track_file_datetime"))
+print(f"Dataframe Length: {len(gdf_track_info)} Rows")
 ```
 
 #### 2.4.4 Activity Recombination
-Sometimes, I chose to record a workout all in the same recorded activity, and other times I broke it into several recorded activities. I need to standardize this. All workouts should be combined into one activity.
+Sometimes, I chose to record a workout all in the same recorded activity, and other times I broke it into several recorded activities. To be able to effectively cluster routes, I need to standardize this. I am going to flatten all activities recorded on the same day into one workout entry with one combined GPX track. This will also fix any cases where I accidently ended an activity mid-run and had to start another. However, I will have to take special care to separate out doubles. During the season, we would run twice on some days, in the morning and the afternoon.
 
-First, identify all dates with more than one recorded activity. Then take these and group them by date. Within each group, first determine if one of the runs is a double and keep it separate, and then combine the rest of the activities. This will combine both workouts and accidental splits together.
+First, I will identify all dates with more than one recorded activity.
+```{python}
+# isolate dates with multiple runs for further processing
+counts = gdf_track_info[["track_file_date", "start_datetime"]].groupby("track_file_date").agg("count")
+multple_dates = counts.loc[counts["start_datetime"] > 1].index
+# dataframe with single-run dates
+gdf_track_info_singles = gdf_track_info.loc[~gdf_track_info['track_file_date'].isin(multple_dates)]
+# dataframe with multiple-run dates
+gdf_track_info_multiples = gdf_track_info.loc[gdf_track_info['track_file_date'].isin(multple_dates)]
+```
+
+Next, I need to find a way to identify doubles. Let's look at the distribution of the time between activities for all of the days with more than one recorded activity. To do this I will group all the workouts by their date and calculate the time between same-day workouts.
+```{python}
+#| echo: false
+# plots exploring doubles
+diff_list = []
+for group_name, group in gdf_track_info_multiples.groupby("track_file_date"):
+    diff_list += list(group["start_datetime"].diff().apply(lambda x: x.total_seconds()/60).values[1::])
+diff_list = np.array(diff_list) / 60
+
+fig, ax = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+sns.violinplot(diff_list, ax=ax[0], orient='h')
+cts, bins, patches = ax[1].hist(diff_list, bins=24)
+for c, left, right in zip(cts, bins[:-1], bins[1:]):
+    center = (left + right) / 2
+    ax[1].text(center, c, f'{int(c)}', ha='center', va='bottom')
+ax[0].axvline(3, c='k', ls='dotted')
+ax[1].axvline(3, c='k', ls='dotted')
+ax[0].set_title("Bimodal Distribution of Time Between Same-day Activities")
+
+plt.tight_layout()
+plt.show()
+```
+
+There is a excellently clear bimodal distribution. The mode around zero corresponds to the workout activities that should be aggregated together, and the mode around nine hours corresponds to doubles. I have marked three hours as an appropriate threshold. For the two activities just under 4 hours, I manually checked and they are doubles. Now, I will go through each date group, if there is a double, I will keep it separate, and then aggregate the other activities into one.
+
+```{python}
+def agg_track_lines(series):
+    lines = []
+    for mline in series:
+        for line in mline.geoms:
+            lines.append(line)
+    return shapely.MultiLineString(lines)
+
+rows = []
+agg_dict = {
+    "track_file": 'sum',
+    "track_file_datetime": 'min',
+    "day_of_week": 'first',
+    "start_datetime": 'first',
+    "end_datetime": 'last',
+    "year": 'first',
+    "season": 'first',
+    "num_pauses": 'sum',
+    "total_duration": 'sum',
+    "active_duration": 'sum',
+    "total_distance (mi)": 'sum',
+    "average_pace (min/mi)": 'mean',
+    "total_ascent (m)": 'sum',
+    "total_descent (m)": 'sum',
+    "start_point": 'first',
+    "end_point": 'last',
+    "track_line": agg_track_lines
+}
+
+for group_name, group in gdf_track_info_multiples.groupby("track_file_date"):
+    split = group['start_datetime'].diff().apply(lambda x: x.total_seconds()/3600) > 3
+    if split.sum() > 0:
+        # add condensed first session
+        temp = group[:split.argmax()].groupby("track_file_date").agg(agg_dict).reset_index()
+        temp["num_pauses"] = temp["num_pauses"] + len(group[:split.argmax()]) - 1
+        rows.append(temp)
+
+        # add condensed second session
+        temp = group[split.argmax():].groupby("track_file_date").agg(agg_dict).reset_index()
+        temp["num_pauses"] = temp["num_pauses"] + len(group[split.argmax():]) - 1
+        rows.append(temp)
+    else:
+        # add condensed session
+        rows.append(group.groupby("track_file_date").agg(agg_dict).reset_index())
+
+gdf_track_info_multiples_combined = gpd.GeoDataFrame(pd.concat(rows), geometry="track_line", crs="EPSG:4326")
+gdf_track_info_multiples_combined["start_point"] = gpd.GeoSeries(gdf_track_info_multiples_combined["end_point"], crs=gdf_track_info_multiples_combined.crs)
+gdf_track_info_multiples_combined["end_point"] = gpd.GeoSeries(gdf_track_info_multiples_combined["end_point"], crs=gdf_track_info_multiples_combined.crs)
+```
+
+```{python}
+#| echo: false
+print("Table with multiples combined")
+display(gdf_track_info_multiples_combined.head(5))
+print(f"Dataframe Length: {len(gdf_track_info_multiples_combined)} Rows")
+```
+
+```{python}
+#| echo: false
+df_tracks = pd.concat([gdf_track_info_singles, gdf_track_info_multiples_combined]).sort_values("track_file_datetime").reset_index(drop=True)
+print("Current Master Dataframe:")
+display(df_tracks.head(5))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
+```
+
+#### 2.4.5 Region Assignment
+
+```{python}
+#| echo: false
+fig, ax = plt.subplots(figsize=(8, 8))
+regions = gpd.read_file("../data/raw/regions.geojson")
+regions.to_crs(3857).plot(ax=ax, ls='dashed', edgecolor='k', lw=1, facecolor='none')
+# gdf_track_info_stc = gdf_track_info[gdf_track_info["region"] != "Other"]
+# gdf_track_info_stc.set_geometry("start_point").to_crs(3857).plot("region", ax=ax, legend=True, marker='o', s=2)
+cx.add_basemap(ax, source=cx.providers.CartoDB.Voyager)
+```
 
 ## 4. Route Clustering
 Route Classification
