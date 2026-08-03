@@ -179,7 +179,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="gpx-file-list" class="level3">
 <h3 class="anchored" data-anchor-id="gpx-file-list">2.1 GPX File List</h3>
 <p>The first piece of this puzzle is to assemble a list of all the GPX files. I will start by obtaining all of the filepaths.</p>
-<div id="78ac789d" class="cell" data-execution_count="3">
+<div id="dfd96ad6" class="cell" data-execution_count="3">
 <div class="cell-output cell-output-stdout">
 <pre><code>Here are the filepaths:</code></pre>
 </div>
@@ -196,15 +196,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">703</td>
+<td data-quarto-table-cell-role="th">982</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">230</td>
+<td data-quarto-table-cell-role="th">944</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">741</td>
+<td data-quarto-table-cell-role="th">799</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
 </tr>
 </tbody>
@@ -218,7 +218,7 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </div>
 </div>
 <p>Each file name contains a date and time (referred to as a datetime). This datetime corresponds to the creation of the file. This is an important piece of information, so I will extract it from the file name and put it in its own column. It will also be useful to have a column with the date only.</p>
-<div id="4d02629d" class="cell" data-execution_count="4">
+<div id="7f1c5955" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parse track file dates</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"track_file_datetime"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file"</span>].<span class="bu">apply</span>(</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">lambda</span> x: datetime.strptime(</span>
@@ -229,7 +229,7 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"track_file_date"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file_datetime"</span>].dt.date</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="33299cf7" class="cell" data-execution_count="5">
+<div id="aed532e5" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated table with dates extracted:</code></pre>
 </div>
@@ -248,22 +248,22 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">611</td>
+<td data-quarto-table-cell-role="th">168</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-10-16 11:47:00-05:00</td>
-<td>2021-10-16</td>
+<td>2023-02-20 08:22:00-06:00</td>
+<td>2023-02-20</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1039</td>
+<td data-quarto-table-cell-role="th">983</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2022-06-29 07:17:00-05:00</td>
-<td>2022-06-29</td>
+<td>2022-08-29 10:58:00-05:00</td>
+<td>2022-08-29</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">461</td>
+<td data-quarto-table-cell-role="th">624</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-06-29 07:28:00-05:00</td>
-<td>2020-06-29</td>
+<td>2019-08-31 08:52:00-05:00</td>
+<td>2019-08-31</td>
 </tr>
 </tbody>
 </table>
@@ -275,7 +275,7 @@ Example file name: route_2020-10-06_3.55pm.gpx</code></pre>
 </div>
 </div>
 <p>The next thing I want to do is to filter for only the runs that occurred while I was in high school. Additionally, I want to bucket the runs into each year of high school and each season of the year. To do this, I went back into my calendar and manually created a table with the necessary information.</p>
-<div id="32fa0242" class="cell" data-execution_count="6">
+<div id="1a37f4ea" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-stdout">
 <pre><code>Minimum Date: 2019-06-10 00:00:00-05:00
 Maximum Date 2023-05-16 00:00:00-05:00
@@ -416,7 +416,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 <p><br></p>
 <p>Now I will apply the minimum and maximum date constraints, and apply the bucketing.</p>
-<div id="87f49e5e" class="cell" data-execution_count="7">
+<div id="3085412c" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># bucket dates into seasons</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>df_tracks <span class="op">=</span> (</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    df_tracks.loc[(df_tracks[<span class="st">"track_file_datetime"</span>] <span class="op">&gt;=</span> seasons.MIN_DATE) <span class="op">&amp;</span> (df_tracks[<span class="st">"track_file_datetime"</span>] <span class="op">&lt;=</span> seasons.MAX_DATE)]</span>
@@ -426,7 +426,7 @@ Year and Seasons Buckets:</code></pre>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"year"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file_datetime"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: seasons.bucket_date(x)[<span class="dv">0</span>])</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>df_tracks[<span class="st">"season"</span>] <span class="op">=</span> df_tracks[<span class="st">"track_file_datetime"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: seasons.bucket_date(x)[<span class="dv">1</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="e37e2739" class="cell" data-execution_count="8">
+<div id="b1b489e9" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated table with dates bucketed:</code></pre>
 </div>
@@ -447,27 +447,27 @@ Year and Seasons Buckets:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">148</td>
+<td data-quarto-table-cell-role="th">750</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2019-10-15 15:22:00-05:00</td>
-<td>2019-10-15</td>
-<td>Freshman</td>
+<td>2021-09-04 09:20:00-05:00</td>
+<td>2021-09-04</td>
+<td>Junior</td>
 <td>XC Season</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">74</td>
+<td data-quarto-table-cell-role="th">16</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2019-09-07 10:23:00-05:00</td>
-<td>2019-09-07</td>
+<td>2019-06-26 08:01:00-05:00</td>
+<td>2019-06-26</td>
 <td>Freshman</td>
-<td>XC Season</td>
+<td>Summer Training</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">1066</td>
+<td data-quarto-table-cell-role="th">841</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2023-03-06 06:25:00-06:00</td>
-<td>2023-03-06</td>
-<td>Senior</td>
+<td>2022-01-31 15:56:00-06:00</td>
+<td>2022-01-31</td>
+<td>Junior</td>
 <td>Track Season</td>
 </tr>
 </tbody>
@@ -484,7 +484,7 @@ Year and Seasons Buckets:</code></pre>
 <section id="workouts-xml" class="level3">
 <h3 class="anchored" data-anchor-id="workouts-xml">2.2 Workouts XML</h3>
 <p>The <code>.xml</code> file contains a <code>Workout</code> tag, which contains a data record for individual workouts. Not much useful information is provided in these records, just dates, a duration, and the type of activity. The type of activity is the most important field. Since the GPX tracks do not specify what activity they contain, I will need to link them to these records to identifiy which ones correspond to runs, and not to walks, bike rides, or hikes.</p>
-<div id="ff871ccd" class="cell" data-execution_count="9">
+<div id="7b0ed6c5" class="cell" data-execution_count="9">
 <div class="cell-output cell-output-stdout">
 <pre><code>Sample of 3 "Workout" records:</code></pre>
 </div>
@@ -509,40 +509,40 @@ Year and Seasons Buckets:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">886</td>
-<td>HKWorkoutActivityTypeRunning</td>
-<td>2.488188584645589</td>
+<td data-quarto-table-cell-role="th">992</td>
+<td>HKWorkoutActivityTypeCycling</td>
+<td>31.17423830032349</td>
 <td>min</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>7.5</td>
-<td>2021-10-04 16:38:26 -0600</td>
-<td>2021-10-04 15:25:25 -0600</td>
-<td>2021-10-04 16:38:24 -0600</td>
-<td>&lt;&lt;HKDevice: 0x3000bd450&gt;, name:Apple Watch, ma...</td>
+<td>8.4.2</td>
+<td>2022-03-12 09:00:43 -0600</td>
+<td>2022-03-12 08:06:59 -0600</td>
+<td>2022-03-12 09:00:42 -0600</td>
+<td>&lt;&lt;HKDevice: 0x3003d4af0&gt;, name:Apple Watch, ma...</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1110</td>
+<td data-quarto-table-cell-role="th">35</td>
 <td>HKWorkoutActivityTypeRunning</td>
-<td>17.75</td>
-<td>min</td>
-<td>Strava</td>
-<td>34212</td>
-<td>2022-09-24 17:00:38 -0600</td>
-<td>2022-09-24 13:36:24 -0600</td>
-<td>2022-09-24 13:54:09 -0600</td>
-<td>NaN</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">512</td>
-<td>HKWorkoutActivityTypeRunning</td>
-<td>30.04409821033478</td>
+<td>44.19019006490707</td>
 <td>min</td>
 <td>Ryan’s Apple&nbsp;Watch</td>
-<td>7.0.2</td>
-<td>2020-11-10 14:13:33 -0600</td>
-<td>2020-11-10 13:24:28 -0600</td>
-<td>2020-11-10 14:13:32 -0600</td>
-<td>&lt;&lt;HKDevice: 0x3003f5db0&gt;, name:Apple Watch, ma...</td>
+<td>5.2.1</td>
+<td>2019-06-29 07:10:03 -0600</td>
+<td>2019-06-29 06:25:34 -0600</td>
+<td>2019-06-29 07:09:46 -0600</td>
+<td>&lt;&lt;HKDevice: 0x3003f8f50&gt;, name:Apple Watch, ma...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">648</td>
+<td>HKWorkoutActivityTypeRunning</td>
+<td>35.96828334927559</td>
+<td>min</td>
+<td>Ryan’s Apple&nbsp;Watch</td>
+<td>7.3</td>
+<td>2021-03-31 08:50:25 -0600</td>
+<td>2021-03-31 08:12:23 -0600</td>
+<td>2021-03-31 08:50:23 -0600</td>
+<td>&lt;&lt;HKDevice: 0x3003e0960&gt;, name:Apple Watch, ma...</td>
 </tr>
 </tbody>
 </table>
@@ -554,7 +554,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 </div>
 <p>To separate runs from hikes, walks, and bike rides, I need to cross reference each GPX file with its corresponding entry in the “Workouts” table from the <code>.xml</code> file. I will go ahead and filter the time period to the minimum and maximum dates. I also want to select only workouts that came from my Apple Watch. I need to exclude any Strava runs since I do not have any GPX files associated with them.</p>
-<div id="92b0d539" class="cell" data-execution_count="10">
+<div id="aa330708" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parse data types</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>df_workouts[<span class="st">'creationDate'</span>] <span class="op">=</span> pd.to_datetime(df_workouts[<span class="st">'creationDate'</span>])</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>df_workouts[<span class="st">'startDate'</span>] <span class="op">=</span> pd.to_datetime(df_workouts[<span class="st">'startDate'</span>])</span>
@@ -569,7 +569,7 @@ Year and Seasons Buckets:</code></pre>
 <span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>df_workouts <span class="op">=</span> df_workouts[[<span class="st">"workoutActivityType"</span>, <span class="st">"creationDate"</span>, <span class="st">"startDate"</span>, <span class="st">"endDate"</span>, <span class="st">"duration"</span>, <span class="st">"durationUnit"</span>]].rename(columns<span class="op">=</span>{<span class="st">"creationDate"</span>: <span class="st">"creation_datetime"</span>, <span class="st">"startDate"</span>: <span class="st">"start_datetime"</span>, <span class="st">"endDate"</span>: <span class="st">"end_datetime"</span>})</span>
 <span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>df_workouts <span class="op">=</span> df_workouts.sort_values(<span class="st">"start_datetime"</span>).reset_index(drop<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="71e4a30d" class="cell" data-execution_count="11">
+<div id="5e727274" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-stdout">
 <pre><code>Workouts table after parsing:</code></pre>
 </div>
@@ -630,7 +630,7 @@ Year and Seasons Buckets:</code></pre>
 <section id="merge-gpx-file-list-with-workouts-xml" class="level3">
 <h3 class="anchored" data-anchor-id="merge-gpx-file-list-with-workouts-xml">2.3 Merge GPX File List with Workouts XML</h3>
 <p>Both tables are prepared, but there is one obstacle remaining to merging them together. The <code>track_file_datetime</code> column in the GPX file dataframe refers to a creation time, so in the merge, we will reference this column to the <code>creation_datetime</code> column in the Workouts dataframe. However, due to whatever reason, these datetimes will not line up identically, they may be offset by several seconds or minutes. To fix this, I will iterate through each <code>track_file_datetime</code> in the GPX track dataframe and locate the closest match in the Workouts dataframe, and store this value in a new temporary column. Then I will merge on this temporary column, and drop any rows that are not running workouts.</p>
-<div id="60fc7acf" class="cell" data-execution_count="12">
+<div id="1deea5d9" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-stdout">
 <pre><code>Merged Dataframes:</code></pre>
 </div>
@@ -694,7 +694,7 @@ Year and Seasons Buckets:</code></pre>
 <h3 class="anchored" data-anchor-id="gpx-track-data-extraction">2.4 GPX Track Data Extraction</h3>
 <p>Now that we have a clean dataset containing all of the runs, it’s time to look inside the GPX files themselves. For each GPX file, the data points are a time series sampled once per second where each timestamp has an associated latitude/longitude coordinate pair and an elevation. We can extract a lot of information from just this information.</p>
 <p>A single <code>.gpx</code> file can contain multiple data layers:</p>
-<div id="64d5c6b2" class="cell" data-execution_count="13">
+<div id="9c25b681" class="cell" data-execution_count="13">
 <div class="cell-output cell-output-stdout">
 <pre><code>GPX File Layers:</code></pre>
 </div>
@@ -744,7 +744,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 <p><br></p>
 <p>However, only two of the layers contain any data. These are the <code>tracks</code> layer and the <code>track_points</code> layer. I can load these individually using <code>geopandas.read_file()</code>. Most of the columns do not contain any data, but what really matters is the <code>geometry</code> column.</p>
-<div id="b85ded97" class="cell" data-execution_count="14">
+<div id="0a98f075" class="cell" data-execution_count="14">
 <div class="cell-output cell-output-stdout">
 <pre><code>"tracks" Layer:</code></pre>
 </div>
@@ -795,7 +795,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 </div>
 <p><br></p>
-<div id="c864c08b" class="cell" data-execution_count="15">
+<div id="43e80153" class="cell" data-execution_count="15">
 <div class="cell-output cell-output-stdout">
 <pre><code>"track_points" Layer:</code></pre>
 </div>
@@ -914,7 +914,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 </div>
 <p>The <code>track_points</code> layer is more useful, since it provides a more granular representation of the data. For each point, it gives a coordinate, timestamp, and elevation. These can be used to derive statistics such as elapsed distance, running pace, elevation change, and later, for route geoclustering.</p>
-<div id="b9a8e314" class="cell" data-execution_count="16">
+<div id="fd3d06eb" class="cell" data-execution_count="16">
 <div class="cell-output cell-output-stdout">
 <pre><code>The track points plotted on a map:</code></pre>
 </div>
@@ -927,7 +927,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 </div>
 <p>Before we get into detecting pauses and deriving statistics, I will properly parse the <code>track_points</code> dataframe and extract two helper columns, <code>dt</code> and <code>dx</code>, describing the change in time and position, respectively, from one track point to the next.</p>
-<div id="cfc3aa09" class="cell" data-execution_count="17">
+<div id="a63902f7" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># parse file</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf[[<span class="st">"time"</span>, <span class="st">"ele"</span>, <span class="st">"geometry"</span>]]</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">"time"</span>] <span class="op">=</span> pd.to_datetime(gdf[<span class="st">"time"</span>])</span>
@@ -938,7 +938,7 @@ Year and Seasons Buckets:</code></pre>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>gdf_utm <span class="op">=</span> gdf.to_crs(gdf.estimate_utm_crs())</span>
 <span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">"dx"</span>] <span class="op">=</span> gdf_utm[<span class="st">"geometry"</span>].distance(gdf_utm[<span class="st">"geometry"</span>].shift())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="a3a8f419" class="cell" data-execution_count="18">
+<div id="2430497d" class="cell" data-execution_count="18">
 <div class="cell-output cell-output-display">
 <div>
 
@@ -989,7 +989,7 @@ Year and Seasons Buckets:</code></pre>
 <h4 class="anchored" data-anchor-id="pause-detection">2.4.1 Pause Detection</h4>
 <p>Before I can extract summary statistics, it is necessary to account for gaps in the data which can distort the statistics. Many runs contain pauses, where I manually paused the run to wait to cross the street, take a break, or for a rest between workout segments. In some cases, the pause may be extra long because I forgot to resume the run.</p>
 <p>Left as-is, these pauses will result in calculating incorrect statistics like duration, distance, and pace. These also cause the map plots to interpolate the track line over the gap which looks funny and does not accurately reflect the run.</p>
-<div id="e57a15d2" class="cell" data-execution_count="19">
+<div id="4aa6ddc9" class="cell" data-execution_count="19">
 <div class="cell-output cell-output-stdout">
 <pre><code>Pauses lead to misleading maps like this one where I forgot to unpause the run:</code></pre>
 </div>
@@ -1018,7 +1018,7 @@ Year and Seasons Buckets:</code></pre>
 <li>Split the data into segments along the located indices by creating an indicator column.</li>
 <li>Remove segments less than 10 seconds, since these are mistakes with no meaningful value.</li>
 </ol>
-<div id="38cde0c4" class="cell" data-execution_count="20">
+<div id="f0acb170" class="cell" data-execution_count="20">
 <div class="cell-output cell-output-stdout">
 <pre><code>The rest of this section will continue using this track as an example:</code></pre>
 </div>
@@ -1030,7 +1030,7 @@ Year and Seasons Buckets:</code></pre>
 </div>
 </div>
 </div>
-<div id="3d5c4ea6" class="cell" data-execution_count="21">
+<div id="d19c1869" class="cell" data-execution_count="21">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># split into segments at pause indices</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pause_idx <span class="op">=</span> <span class="bu">list</span>(gdf.loc[gdf[<span class="st">'dt'</span>] <span class="op">&gt;</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)].index)</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>gdf[<span class="st">'pause_segment'</span>] <span class="op">=</span> <span class="va">None</span></span>
@@ -1041,7 +1041,7 @@ Year and Seasons Buckets:</code></pre>
 <span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="co"># remove segments less than 10 seconds</span></span>
 <span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf.groupby(<span class="st">"pause_segment"</span>, group_keys<span class="op">=</span><span class="va">False</span>).<span class="bu">filter</span>(<span class="kw">lambda</span> x: <span class="bu">len</span>(x) <span class="op">&gt;</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="53c2d5ae" class="cell" data-execution_count="22">
+<div id="1865a278" class="cell" data-execution_count="22">
 <div class="cell-output cell-output-display">
 <div>
 
@@ -1060,48 +1060,48 @@ Year and Seasons Buckets:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">419</td>
-<td>2020-10-06 20:28:16+00:00</td>
-<td>238.655075</td>
-<td>POINT (-88.29144 41.93125)</td>
+<td data-quarto-table-cell-role="th">121</td>
+<td>2020-10-06 20:23:15+00:00</td>
+<td>233.939163</td>
+<td>POINT (-88.28222 41.9306)</td>
 <td>0 days 00:00:01</td>
-<td>3.346932</td>
-<td>2</td>
+<td>2.606491</td>
+<td>1</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">647</td>
-<td>2020-10-06 20:32:04+00:00</td>
-<td>237.618317</td>
-<td>POINT (-88.29613 41.92586)</td>
+<td data-quarto-table-cell-role="th">243</td>
+<td>2020-10-06 20:25:20+00:00</td>
+<td>234.204468</td>
+<td>POINT (-88.2862 41.93254)</td>
 <td>0 days 00:00:01</td>
-<td>3.593353</td>
+<td>3.203900</td>
 <td>2</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">1064</td>
-<td>2020-10-06 20:39:01+00:00</td>
-<td>232.248688</td>
-<td>POINT (-88.30394 41.9215)</td>
+<td data-quarto-table-cell-role="th">455</td>
+<td>2020-10-06 20:28:52+00:00</td>
+<td>239.093552</td>
+<td>POINT (-88.29171 41.93015)</td>
 <td>0 days 00:00:01</td>
-<td>3.446336</td>
+<td>3.287867</td>
 <td>2</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1400</td>
-<td>2020-10-06 20:44:37+00:00</td>
-<td>236.480652</td>
-<td>POINT (-88.29428 41.9226)</td>
+<td data-quarto-table-cell-role="th">1255</td>
+<td>2020-10-06 20:42:12+00:00</td>
+<td>234.402237</td>
+<td>POINT (-88.29757 41.91996)</td>
 <td>0 days 00:00:01</td>
-<td>3.562078</td>
+<td>2.790766</td>
 <td>2</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">1464</td>
-<td>2020-10-06 20:45:41+00:00</td>
-<td>237.072632</td>
-<td>POINT (-88.29252 41.9233)</td>
+<td data-quarto-table-cell-role="th">1833</td>
+<td>2020-10-06 20:51:50+00:00</td>
+<td>235.241226</td>
+<td>POINT (-88.28385 41.92833)</td>
 <td>0 days 00:00:01</td>
-<td>3.333834</td>
+<td>3.348769</td>
 <td>2</td>
 </tr>
 </tbody>
@@ -1117,7 +1117,7 @@ Year and Seasons Buckets:</code></pre>
 <section id="rolling-pace" class="level4">
 <h4 class="anchored" data-anchor-id="rolling-pace">2.4.2 Rolling Pace</h4>
 <p>Before moving on to calculating summary statistics, I need to create a column for the current pace. The pace is my speed, usually measured in minutes per mile, so it is calculated by <code>dt</code> / <code>dx</code>. To calculate the pace, I will use a rolling average from the last 10 seconds, and importantly doing this separately within each pause segment. A side effect of using a rolling window of 10 seconds is that you cannot calculate it for the first 10 seconds, so we fill simply backfill the pace for the first 10 seconds.</p>
-<div id="3861a82d" class="cell" data-execution_count="23">
+<div id="8c73e95b" class="cell" data-execution_count="23">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate pace for each pause segment separately</span></span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_rolling_pace(gdf):</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># use a 10 second rolling window for calculating pace</span></span>
@@ -1127,7 +1127,7 @@ Year and Seasons Buckets:</code></pre>
 <span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> gdf</span>
 <span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>gdf <span class="op">=</span> gdf.groupby(<span class="st">'pause_segment'</span>).<span class="bu">apply</span>(calculate_rolling_pace).reset_index().drop(columns<span class="op">=</span>[<span class="st">"level_1"</span>], errors<span class="op">=</span><span class="st">'ignore'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="1dbe9b61" class="cell" data-execution_count="24">
+<div id="cf318522" class="cell" data-execution_count="24">
 <div class="cell-output cell-output-display">
 <div>
 
@@ -1147,54 +1147,54 @@ Year and Seasons Buckets:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">238</td>
-<td>2</td>
-<td>2020-10-06 20:25:21+00:00</td>
-<td>234.204208</td>
-<td>POINT (-88.28623 41.93257)</td>
+<td data-quarto-table-cell-role="th">92</td>
+<td>1</td>
+<td>2020-10-06 20:22:52+00:00</td>
+<td>233.616776</td>
+<td>POINT (-88.28151 41.93014)</td>
 <td>0 days 00:00:01</td>
-<td>3.342227</td>
-<td>8.246420</td>
+<td>3.693490</td>
+<td>7.319031</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">371</td>
-<td>2</td>
-<td>2020-10-06 20:27:34+00:00</td>
-<td>237.681564</td>
-<td>POINT (-88.29075 41.93235)</td>
+<td data-quarto-table-cell-role="th">113</td>
+<td>1</td>
+<td>2020-10-06 20:23:13+00:00</td>
+<td>233.932343</td>
+<td>POINT (-88.28217 41.93056)</td>
 <td>0 days 00:00:01</td>
-<td>3.321780</td>
-<td>8.447384</td>
+<td>2.606492</td>
+<td>8.356640</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">426</td>
+<td data-quarto-table-cell-role="th">1229</td>
 <td>2</td>
-<td>2020-10-06 20:28:29+00:00</td>
-<td>238.461578</td>
-<td>POINT (-88.29158 41.93087)</td>
+<td>2020-10-06 20:41:52+00:00</td>
+<td>233.854355</td>
+<td>POINT (-88.29827 41.91992)</td>
 <td>0 days 00:00:01</td>
-<td>3.413861</td>
-<td>7.949844</td>
+<td>3.227173</td>
+<td>8.371265</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">1321</td>
+<td data-quarto-table-cell-role="th">1726</td>
 <td>2</td>
-<td>2020-10-06 20:43:24+00:00</td>
-<td>234.448425</td>
-<td>POINT (-88.29549 41.92116)</td>
+<td>2020-10-06 20:50:09+00:00</td>
+<td>234.804413</td>
+<td>POINT (-88.28477 41.92558)</td>
 <td>0 days 00:00:01</td>
-<td>2.917278</td>
-<td>8.634977</td>
+<td>2.370628</td>
+<td>11.111920</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">1467</td>
+<td data-quarto-table-cell-role="th">1806</td>
 <td>2</td>
-<td>2020-10-06 20:45:50+00:00</td>
-<td>236.681366</td>
-<td>POINT (-88.29216 41.92328)</td>
+<td>2020-10-06 20:51:29+00:00</td>
+<td>235.843277</td>
+<td>POINT (-88.28416 41.92776)</td>
 <td>0 days 00:00:01</td>
-<td>3.407324</td>
-<td>7.973592</td>
+<td>3.186069</td>
+<td>8.593160</td>
 </tr>
 </tbody>
 </table>
@@ -1220,7 +1220,7 @@ Year and Seasons Buckets:</code></pre>
 <li><strong>total_descent</strong>: the total elevation decrease throughout the run.</li>
 <li><strong>track_line</strong>: A MultiLineString object containing LineStrings that represent each continous segment between pauses.</li>
 </ul>
-<div id="ae3a25ef" class="cell" data-execution_count="25">
+<div id="e71679ae" class="cell" data-execution_count="25">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate number of pauses, where a pause is defined as dt &gt; 1 second</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>num_pauses <span class="op">=</span> <span class="bu">len</span>(gdf.loc[gdf[<span class="st">'dt'</span>] <span class="op">&gt;</span> timedelta(seconds<span class="op">=</span><span class="dv">1</span>)])</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1245,7 +1245,7 @@ Year and Seasons Buckets:</code></pre>
 <span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a><span class="co"># split each pause segment into a LineString within a MultiLineString</span></span>
 <span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>fixed_track_line <span class="op">=</span> shapely.MultiLineString([shapely.LineString(group[<span class="st">'geometry'</span>]) <span class="cf">for</span> _, group <span class="kw">in</span> gdf.groupby(<span class="st">'pause_segment'</span>)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="65f09f3f" class="cell" data-execution_count="26">
+<div id="6709a131" class="cell" data-execution_count="26">
 <div class="cell-output cell-output-stdout">
 <pre><code>Number of Pauses: 3
 Total Duration: 0 days 00:33:33
@@ -1266,7 +1266,7 @@ Fixed Track Line:</code></pre>
 </div>
 </div>
 <p>Now I will apply these GPX data extraction steps to each GPX file, and add the resulting summary statistics and fixed track line to our master dataframe.</p>
-<div id="28231ec8" class="cell" data-execution_count="27">
+<div id="b1626e43" class="cell" data-execution_count="27">
 <div class="cell-output cell-output-stdout">
 <pre><code>Updated Master Dataframe:</code></pre>
 </div>
@@ -1300,214 +1300,214 @@ Fixed Track Line:</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">275</td>
+<td data-quarto-table-cell-role="th">48</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-06-05 07:04:00-05:00</td>
-<td>2020-06-05</td>
-<td>Friday</td>
-<td>Sophomore</td>
-<td>Summer Training</td>
-<td>POINT (-88.28675 41.9043)</td>
-<td>POINT (-88.2866 41.9034)</td>
-<td>3</td>
-<td>MULTILINESTRING ((-88.28675 41.9043, -88.28674...</td>
-<td>2020-06-05 11:38:16+00:00</td>
-<td>2020-06-05 12:04:38+00:00</td>
-<td>0 days 00:26:24</td>
-<td>0 days 00:26:18</td>
-<td>2.927488</td>
-<td>8.831645</td>
-<td>52.348479</td>
-<td>-33.670257</td>
+<td>2019-08-24 14:25:00-05:00</td>
+<td>2019-08-24</td>
+<td>Saturday</td>
+<td>Freshman</td>
+<td>XC Season</td>
+<td>POINT (-88.27748 41.92839)</td>
+<td>POINT (-88.27733 41.92828)</td>
+<td>1</td>
+<td>MULTILINESTRING ((-88.27748 41.92839, -88.2774...</td>
+<td>2019-08-24 19:18:25+00:00</td>
+<td>2019-08-24 19:25:52+00:00</td>
+<td>0 days 00:07:27</td>
+<td>0 days 00:07:25</td>
+<td>1.021750</td>
+<td>7.160924</td>
+<td>4.130159</td>
+<td>-4.160112</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">291</td>
+<td data-quarto-table-cell-role="th">128</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-06-23 07:00:00-05:00</td>
-<td>2020-06-23</td>
-<td>Tuesday</td>
-<td>Sophomore</td>
-<td>Summer Training</td>
-<td>POINT (-88.31158 41.90829)</td>
-<td>POINT (-88.31037 41.90433)</td>
-<td>4</td>
-<td>MULTILINESTRING ((-88.31158 41.90829, -88.3116...</td>
-<td>2020-06-23 11:47:31+00:00</td>
-<td>2020-06-23 12:00:03+00:00</td>
-<td>0 days 00:11:45</td>
-<td>0 days 00:07:24</td>
-<td>0.882743</td>
-<td>8.111984</td>
-<td>26.179962</td>
-<td>-11.133926</td>
+<td>2019-10-04 15:41:00-05:00</td>
+<td>2019-10-04</td>
+<td>Friday</td>
+<td>Freshman</td>
+<td>XC Season</td>
+<td>POINT (-88.27983 41.92856)</td>
+<td>POINT (-88.27986 41.92844)</td>
+<td>7</td>
+<td>MULTILINESTRING ((-88.27983 41.92856, -88.2798...</td>
+<td>2019-10-04 20:05:56+00:00</td>
+<td>2019-10-04 20:41:16+00:00</td>
+<td>0 days 00:35:20</td>
+<td>0 days 00:34:49</td>
+<td>4.081166</td>
+<td>8.480911</td>
+<td>27.042113</td>
+<td>-26.940138</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">359</td>
+<td data-quarto-table-cell-role="th">182</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-09-23 17:03:00-05:00</td>
-<td>2020-09-23</td>
-<td>Wednesday</td>
-<td>Sophomore</td>
-<td>XC Season</td>
-<td>POINT (-88.27831 41.92712)</td>
-<td>POINT (-88.279 41.92729)</td>
-<td>2</td>
-<td>MULTILINESTRING ((-88.27831 41.92712, -88.2783...</td>
-<td>2020-09-23 21:42:58+00:00</td>
-<td>2020-09-23 22:03:48+00:00</td>
-<td>0 days 00:20:50</td>
-<td>0 days 00:20:46</td>
-<td>2.983654</td>
-<td>7.004516</td>
-<td>27.662580</td>
-<td>-27.240553</td>
+<td>2019-12-17 15:30:00-06:00</td>
+<td>2019-12-17</td>
+<td>Tuesday</td>
+<td>Freshman</td>
+<td>Winter Training</td>
+<td>POINT (-88.29861 41.9255)</td>
+<td>POINT (-88.29561 41.92938)</td>
+<td>1</td>
+<td>MULTILINESTRING ((-88.29861 41.9255, -88.29861...</td>
+<td>2019-12-17 21:14:40+00:00</td>
+<td>2019-12-17 21:30:48+00:00</td>
+<td>0 days 00:16:08</td>
+<td>0 days 00:16:06</td>
+<td>1.828628</td>
+<td>7.664430</td>
+<td>8.676743</td>
+<td>-8.176103</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">383</td>
+<td data-quarto-table-cell-role="th">190</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2020-10-10 07:47:00-05:00</td>
-<td>2020-10-10</td>
+<td>2019-12-26 08:30:00-06:00</td>
+<td>2019-12-26</td>
+<td>Thursday</td>
+<td>Freshman</td>
+<td>Winter Training</td>
+<td>POINT (-88.28337 41.93075)</td>
+<td>POINT (-88.28508 41.93158)</td>
+<td>2</td>
+<td>MULTILINESTRING ((-88.28337 41.93075, -88.2834...</td>
+<td>2019-12-26 14:16:19+00:00</td>
+<td>2019-12-26 14:29:41+00:00</td>
+<td>0 days 00:13:22</td>
+<td>0 days 00:13:11</td>
+<td>1.710951</td>
+<td>7.725318</td>
+<td>13.064820</td>
+<td>-12.798280</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">196</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2019-12-31 08:42:00-06:00</td>
+<td>2019-12-31</td>
+<td>Tuesday</td>
+<td>Freshman</td>
+<td>Winter Training</td>
+<td>POINT (-88.27897 41.92801)</td>
+<td>POINT (-88.27982 41.92842)</td>
+<td>3</td>
+<td>MULTILINESTRING ((-88.27897 41.92801, -88.2789...</td>
+<td>2019-12-31 14:10:24+00:00</td>
+<td>2019-12-31 14:42:40+00:00</td>
+<td>0 days 00:32:16</td>
+<td>0 days 00:30:35</td>
+<td>2.911898</td>
+<td>9.372107</td>
+<td>28.307570</td>
+<td>-28.554503</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">251</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2020-03-28 11:33:00-05:00</td>
+<td>2020-03-28</td>
+<td>Saturday</td>
+<td>Freshman</td>
+<td>Track Season</td>
+<td>POINT (-88.28674 41.90476)</td>
+<td>POINT (-88.2879 41.90377)</td>
+<td>3</td>
+<td>MULTILINESTRING ((-88.28674 41.90476, -88.2867...</td>
+<td>2020-03-28 16:18:35+00:00</td>
+<td>2020-03-28 16:33:23+00:00</td>
+<td>0 days 00:14:52</td>
+<td>0 days 00:14:44</td>
+<td>1.758851</td>
+<td>8.178454</td>
+<td>16.378053</td>
+<td>-15.094179</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">407</td>
+<td>/Users/ryansponzilli/Developer/Python Projects...</td>
+<td>2020-11-28 10:50:00-06:00</td>
+<td>2020-11-28</td>
 <td>Saturday</td>
 <td>Sophomore</td>
-<td>XC Season</td>
-<td>POINT (-88.27664 41.92875)</td>
-<td>POINT (-88.27734 41.92827)</td>
-<td>1</td>
-<td>MULTILINESTRING ((-88.27664 41.92875, -88.2766...</td>
-<td>2020-10-10 12:41:36+00:00</td>
-<td>2020-10-10 12:47:05+00:00</td>
-<td>0 days 00:05:32</td>
-<td>0 days 00:05:29</td>
-<td>0.945679</td>
-<td>5.811499</td>
-<td>5.083955</td>
-<td>-3.399735</td>
+<td>Winter Training</td>
+<td>POINT (-88.31497 41.91863)</td>
+<td>POINT (-88.31532 41.91916)</td>
+<td>11</td>
+<td>MULTILINESTRING ((-88.31497 41.91863, -88.3149...</td>
+<td>2020-11-28 16:10:54+00:00</td>
+<td>2020-11-28 16:50:27+00:00</td>
+<td>0 days 00:31:52</td>
+<td>0 days 00:27:59</td>
+<td>3.130186</td>
+<td>8.228507</td>
+<td>73.605178</td>
+<td>-74.128341</td>
 </tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">511</td>
+<tr class="even">
+<td data-quarto-table-cell-role="th">525</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-03-25 16:00:00-05:00</td>
-<td>2021-03-25</td>
+<td>2021-04-08 15:57:00-05:00</td>
+<td>2021-04-08</td>
 <td>Thursday</td>
 <td>Sophomore</td>
-<td>Winter Training</td>
-<td>POINT (-88.27988 41.92862)</td>
-<td>POINT (-88.27978 41.92844)</td>
-<td>11</td>
-<td>MULTILINESTRING ((-88.27988 41.92862, -88.2798...</td>
-<td>2021-03-25 19:55:31+00:00</td>
-<td>2021-03-25 21:00:54+00:00</td>
-<td>0 days 00:50:47</td>
-<td>0 days 00:48:38</td>
-<td>6.597568</td>
-<td>7.449268</td>
-<td>111.392730</td>
-<td>-111.677627</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">537</td>
-<td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-04-20 15:37:00-05:00</td>
-<td>2021-04-20</td>
-<td>Tuesday</td>
-<td>Sophomore</td>
 <td>Track Season</td>
-<td>POINT (-88.27967 41.92859)</td>
-<td>POINT (-88.27989 41.92845)</td>
-<td>3</td>
-<td>MULTILINESTRING ((-88.27967 41.92859, -88.2796...</td>
-<td>2021-04-20 20:04:57+00:00</td>
-<td>2021-04-20 20:37:47+00:00</td>
-<td>0 days 00:31:49</td>
-<td>0 days 00:31:10</td>
-<td>4.083687</td>
-<td>7.598700</td>
-<td>29.133894</td>
-<td>-28.981886</td>
+<td>POINT (-88.27974 41.92863)</td>
+<td>POINT (-88.27976 41.92828)</td>
+<td>10</td>
+<td>MULTILINESTRING ((-88.27974 41.92863, -88.2797...</td>
+<td>2021-04-08 20:01:22+00:00</td>
+<td>2021-04-08 20:57:43+00:00</td>
+<td>0 days 00:49:38</td>
+<td>0 days 00:46:38</td>
+<td>6.043812</td>
+<td>7.612528</td>
+<td>110.478756</td>
+<td>-108.976773</td>
 </tr>
 <tr class="odd">
-<td data-quarto-table-cell-role="th">588</td>
+<td data-quarto-table-cell-role="th">763</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-05-26 18:17:00-05:00</td>
-<td>2021-05-26</td>
-<td>Wednesday</td>
-<td>Sophomore</td>
-<td>Track Season</td>
-<td>POINT (-88.27749 41.92852)</td>
-<td>POINT (-88.27979 41.9285)</td>
-<td>2</td>
-<td>MULTILINESTRING ((-88.27749 41.92852, -88.2774...</td>
-<td>2021-05-26 23:11:12+00:00</td>
-<td>2021-05-26 23:17:13+00:00</td>
-<td>0 days 00:06:03</td>
-<td>0 days 00:05:56</td>
-<td>0.659248</td>
-<td>8.483895</td>
-<td>3.812791</td>
-<td>-5.706117</td>
-</tr>
-<tr class="even">
-<td data-quarto-table-cell-role="th">708</td>
-<td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2021-09-20 15:59:00-05:00</td>
-<td>2021-09-20</td>
+<td>2022-01-17 09:25:00-06:00</td>
+<td>2022-01-17</td>
 <td>Monday</td>
 <td>Junior</td>
-<td>XC Season</td>
-<td>POINT (-88.27976 41.92868)</td>
-<td>POINT (-88.27977 41.92846)</td>
-<td>19</td>
-<td>MULTILINESTRING ((-88.27976 41.92868, -88.2797...</td>
-<td>2021-09-20 20:03:09+00:00</td>
-<td>2021-09-20 20:59:16+00:00</td>
-<td>0 days 00:53:10</td>
-<td>0 days 00:48:52</td>
-<td>6.430037</td>
-<td>7.599476</td>
-<td>60.793227</td>
-<td>-61.113219</td>
-</tr>
-<tr class="odd">
-<td data-quarto-table-cell-role="th">907</td>
-<td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2022-12-12 15:47:00-06:00</td>
-<td>2022-12-12</td>
-<td>Monday</td>
-<td>Senior</td>
 <td>Winter Training</td>
-<td>POINT (-88.27981 41.92881)</td>
-<td>POINT (-88.2799 41.92846)</td>
-<td>8</td>
-<td>MULTILINESTRING ((-88.27981 41.92881, -88.2798...</td>
-<td>2022-12-12 20:51:21+00:00</td>
-<td>2022-12-12 21:47:41+00:00</td>
-<td>0 days 00:53:59</td>
-<td>0 days 00:50:32</td>
-<td>6.184217</td>
-<td>8.125310</td>
-<td>60.195813</td>
-<td>-60.283697</td>
+<td>POINT (-88.31524 41.91912)</td>
+<td>POINT (-88.31552 41.91957)</td>
+<td>20</td>
+<td>MULTILINESTRING ((-88.31524 41.91912, -88.3152...</td>
+<td>2022-01-17 14:11:20+00:00</td>
+<td>2022-01-17 15:25:55+00:00</td>
+<td>0 days 01:13:41</td>
+<td>0 days 01:03:05</td>
+<td>7.552685</td>
+<td>8.147951</td>
+<td>97.030079</td>
+<td>-97.020100</td>
 </tr>
 <tr class="even">
-<td data-quarto-table-cell-role="th">930</td>
+<td data-quarto-table-cell-role="th">987</td>
 <td>/Users/ryansponzilli/Developer/Python Projects...</td>
-<td>2023-01-17 16:14:00-06:00</td>
-<td>2023-01-17</td>
-<td>Tuesday</td>
+<td>2023-03-16 15:50:00-05:00</td>
+<td>2023-03-16</td>
+<td>Thursday</td>
 <td>Senior</td>
-<td>Winter Training</td>
-<td>POINT (-88.27986 41.9285)</td>
-<td>POINT (-88.27969 41.92841)</td>
-<td>9</td>
-<td>MULTILINESTRING ((-88.27986 41.9285, -88.27986...</td>
-<td>2023-01-17 20:58:17+00:00</td>
-<td>2023-01-17 22:14:30+00:00</td>
-<td>0 days 01:11:52</td>
-<td>0 days 00:55:18</td>
-<td>7.395419</td>
-<td>7.511521</td>
-<td>46.386440</td>
-<td>-46.506581</td>
+<td>Track Season</td>
+<td>POINT (-88.27986 41.92883)</td>
+<td>POINT (-88.27977 41.92843)</td>
+<td>5</td>
+<td>MULTILINESTRING ((-88.27986 41.92883, -88.2798...</td>
+<td>2023-03-16 20:22:38+00:00</td>
+<td>2023-03-16 20:50:36+00:00</td>
+<td>0 days 00:28:02</td>
+<td>0 days 00:26:20</td>
+<td>3.438203</td>
+<td>7.606551</td>
+<td>22.190808</td>
+<td>-22.621379</td>
 </tr>
 </tbody>
 </table>
@@ -1523,17 +1523,17 @@ Fixed Track Line:</code></pre>
 <h4 class="anchored" data-anchor-id="activity-recombination">2.4.4 Activity Recombination</h4>
 <p>Sometimes, I chose to record a workout all in the same recorded activity, and other times I broke it into several recorded activities. To be able to effectively cluster routes, I need to standardize this. I am going to flatten all activities recorded on the same day into one workout entry with one combined GPX track. This will also fix any cases where I accidently ended an activity mid-run and had to start another. However, I will have to take special care to separate out doubles. During the season, we would run twice on some days, in the morning and the afternoon.</p>
 <p>First, I will identify all dates with more than one recorded activity.</p>
-<div id="3cf23aba" class="cell" data-execution_count="28">
+<div id="e8682528" class="cell" data-execution_count="28">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># isolate dates with multiple runs for further processing</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> gdf_track_info[[<span class="st">"track_file_date"</span>, <span class="st">"start_datetime"</span>]].groupby(<span class="st">"track_file_date"</span>).agg(<span class="st">"count"</span>)</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> df_tracks[[<span class="st">"track_file_date"</span>, <span class="st">"start_datetime"</span>]].groupby(<span class="st">"track_file_date"</span>).agg(<span class="st">"count"</span>)</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>multple_dates <span class="op">=</span> counts.loc[counts[<span class="st">"start_datetime"</span>] <span class="op">&gt;</span> <span class="dv">1</span>].index</span>
 <span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="co"># dataframe with single-run dates</span></span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>gdf_track_info_singles <span class="op">=</span> gdf_track_info.loc[<span class="op">~</span>gdf_track_info[<span class="st">'track_file_date'</span>].isin(multple_dates)]</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>df_tracks_singles <span class="op">=</span> df_tracks.loc[<span class="op">~</span>df_tracks[<span class="st">'track_file_date'</span>].isin(multple_dates)]</span>
 <span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="co"># dataframe with multiple-run dates</span></span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>gdf_track_info_multiples <span class="op">=</span> gdf_track_info.loc[gdf_track_info[<span class="st">'track_file_date'</span>].isin(multple_dates)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>df_tracks_multiples <span class="op">=</span> df_tracks.loc[df_tracks[<span class="st">'track_file_date'</span>].isin(multple_dates)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Next, I need to find a way to identify doubles. Let’s look at the distribution of the time between activities for all of the days with more than one recorded activity. To do this I will group all the workouts by their date and calculate the time between same-day workouts.</p>
-<div id="d904b274" class="cell" data-execution_count="29">
+<div id="5b9c7d5e" class="cell" data-execution_count="29">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -1543,7 +1543,7 @@ Fixed Track Line:</code></pre>
 </div>
 </div>
 <p>There is a excellently clear bimodal distribution. The mode around zero corresponds to the workout activities that should be aggregated together, and the mode around nine hours corresponds to doubles. I have marked three hours as an appropriate threshold. For the two activities just under 4 hours, I manually checked and they are doubles. Now, I will go through each date group, if there is a double, I will keep it separate, and then aggregate the other activities into one.</p>
-<div id="1778e2cf" class="cell" data-execution_count="30">
+<div id="0aec8332" class="cell" data-execution_count="30">
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> agg_track_lines(series):</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    lines <span class="op">=</span> []</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> mline <span class="kw">in</span> series:</span>
@@ -1572,7 +1572,7 @@ Fixed Track Line:</code></pre>
 <span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">"track_line"</span>: agg_track_lines</span>
 <span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> group_name, group <span class="kw">in</span> gdf_track_info_multiples.groupby(<span class="st">"track_file_date"</span>):</span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> group_name, group <span class="kw">in</span> df_tracks_multiples.groupby(<span class="st">"track_file_date"</span>):</span>
 <span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>    split <span class="op">=</span> group[<span class="st">'start_datetime'</span>].diff().<span class="bu">apply</span>(<span class="kw">lambda</span> x: x.total_seconds()<span class="op">/</span><span class="dv">3600</span>) <span class="op">&gt;</span> <span class="dv">3</span></span>
 <span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> split.<span class="bu">sum</span>() <span class="op">&gt;</span> <span class="dv">0</span>:</span>
 <span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>        <span class="co"># add condensed first session</span></span>
@@ -1588,11 +1588,11 @@ Fixed Track Line:</code></pre>
 <span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a>        <span class="co"># add condensed session</span></span>
 <span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a>        rows.append(group.groupby(<span class="st">"track_file_date"</span>).agg(agg_dict).reset_index())</span>
 <span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a>gdf_track_info_multiples_combined <span class="op">=</span> gpd.GeoDataFrame(pd.concat(rows), geometry<span class="op">=</span><span class="st">"track_line"</span>, crs<span class="op">=</span><span class="st">"EPSG:4326"</span>)</span>
-<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a>gdf_track_info_multiples_combined[<span class="st">"start_point"</span>] <span class="op">=</span> gpd.GeoSeries(gdf_track_info_multiples_combined[<span class="st">"end_point"</span>], crs<span class="op">=</span>gdf_track_info_multiples_combined.crs)</span>
-<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a>gdf_track_info_multiples_combined[<span class="st">"end_point"</span>] <span class="op">=</span> gpd.GeoSeries(gdf_track_info_multiples_combined[<span class="st">"end_point"</span>], crs<span class="op">=</span>gdf_track_info_multiples_combined.crs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a>df_tracks_multiples_combined <span class="op">=</span> gpd.GeoDataFrame(pd.concat(rows), geometry<span class="op">=</span><span class="st">"track_line"</span>, crs<span class="op">=</span><span class="st">"EPSG:4326"</span>)</span>
+<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a>df_tracks_multiples_combined[<span class="st">"start_point"</span>] <span class="op">=</span> gpd.GeoSeries(df_tracks_multiples_combined[<span class="st">"end_point"</span>], crs<span class="op">=</span>df_tracks_multiples_combined.crs)</span>
+<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a>df_tracks_multiples_combined[<span class="st">"end_point"</span>] <span class="op">=</span> gpd.GeoSeries(df_tracks_multiples_combined[<span class="st">"end_point"</span>], crs<span class="op">=</span>df_tracks_multiples_combined.crs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="ccda185c" class="cell" data-execution_count="31">
+<div id="25704f96" class="cell" data-execution_count="31">
 <div class="cell-output cell-output-stdout">
 <pre><code>Table with multiples combined</code></pre>
 </div>
@@ -1739,7 +1739,7 @@ Fixed Track Line:</code></pre>
 <pre><code>Dataframe Length: 184 Rows</code></pre>
 </div>
 </div>
-<div id="b646eedf" class="cell" data-execution_count="32">
+<div id="ac245bf6" class="cell" data-execution_count="32">
 <div class="cell-output cell-output-stdout">
 <pre><code>Current Master Dataframe:</code></pre>
 </div>
@@ -1889,11 +1889,22 @@ Fixed Track Line:</code></pre>
 </section>
 <section id="region-assignment" class="level4">
 <h4 class="anchored" data-anchor-id="region-assignment">2.4.5 Region Assignment</h4>
-<div id="4e327c68" class="cell" data-execution_count="33">
+<p>The vast majority of runs take place somewhere within St.&nbsp;Charles (there are some in other regions of the state and country from trips), and within St.&nbsp;Charles they form some natural clusters.</p>
+<div id="100fb84b" class="cell" data-execution_count="33">
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
 <p><img src="showcase_files/figure-html/cell-34-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>I identified six regions within St.&nbsp;Charles that are typical starting places for runs and added this variable to our master dataframe.</p>
+<div id="fd5a6824" class="cell" data-execution_count="34">
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-35-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -1903,7 +1914,80 @@ Fixed Track Line:</code></pre>
 </section>
 <section id="route-clustering" class="level2">
 <h2 class="anchored" data-anchor-id="route-clustering">4. Route Clustering</h2>
-<p>Route Classification</p>
+<p>Routes are segments of tracks that show up time and time again across the dataset. A single run may contain more than one route, since sometimes routes are chained together.</p>
+<p>I am going to use an unsupervised machine learning model to identify runs that traverse the same route. From there, I will manually assign each route its name. Not every run will be a known route, sometimes a route was not run more than a once or twice.</p>
+<p>Here is the architecture of the model:</p>
+<div id="134e464c" class="cell" data-execution_count="35">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>cell_res <span class="op">=</span> <span class="dv">11</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>min_cluster_size <span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>track_cells_pipeline <span class="op">=</span> Pipeline(</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    steps<span class="op">=</span>[</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'h3'</span>, TrackCellTransformer(cell_res<span class="op">=</span>cell_res)),</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'vectorizor'</span>, TfidfVectorizer()),</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>preprocessor <span class="op">=</span> ColumnTransformer(</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    transformers<span class="op">=</span>[</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'track_line_cells'</span>, track_cells_pipeline, [<span class="st">"track_line"</span>]),</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>    remainder<span class="op">=</span><span class="st">'drop'</span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> Pipeline(</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>    steps<span class="op">=</span>[</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'preprocessor'</span>, preprocessor),</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>        (<span class="st">'estimator'</span>, HDBSCAN(metric<span class="op">=</span><span class="st">'cosine'</span>, min_cluster_size<span class="op">=</span>min_cluster_size)),</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s fit the model and look at the results</p>
+<div id="b7c8f360" class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>_ <span class="op">=</span> model.fit(df_tracks_stc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="0c0bf726" class="cell" data-execution_count="37">
+<div class="cell-output cell-output-stdout">
+<pre><code>Total Runs: 754
+Number of Clusters: 48
+Number of Unclustered Runs: 245
+Mean Cluster Size: 10.83
+Median Cluster Size: 8.0</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-38-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-38-output-3.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="7ac08ee8" class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>df_routes <span class="op">=</span> pd.read_csv(<span class="st">"../data/raw/routes.csv"</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>df_tracks_stc <span class="op">=</span> pd.merge(df_tracks_stc, df_routes[[<span class="st">"route_label"</span>, <span class="st">"route_type"</span>, <span class="st">"route_name"</span>]], on<span class="op">=</span><span class="st">"route_label"</span>, how<span class="op">=</span><span class="st">"left"</span>).drop(columns<span class="op">=</span>[<span class="st">"route_label"</span>])</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>df_tracks_stc[<span class="st">'route_type'</span>] <span class="op">=</span> df_tracks_stc[<span class="st">'route_type'</span>].fillna(<span class="st">"Unknown"</span>)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>df_tracks_stc[<span class="st">'route_name'</span>] <span class="op">=</span> df_tracks_stc[<span class="st">'route_name'</span>].fillna(<span class="st">"Unknown"</span>)</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>plt.bar(df_tracks_stc.loc[df_tracks_stc[<span class="st">'route_name'</span>] <span class="op">!=</span> <span class="st">"Unknown"</span>, <span class="st">'route_name'</span>].value_counts().index, df_tracks_stc.loc[df_tracks_stc[<span class="st">'route_name'</span>] <span class="op">!=</span> <span class="st">"Unknown"</span>, <span class="st">'route_name'</span>].value_counts().values)</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>plt.xticks(rotation<span class="op">=</span><span class="dv">90</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Route Distribution"</span>)</span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="showcase_files/figure-html/cell-39-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
 <section id="route-decomposition" class="level2">
 <h2 class="anchored" data-anchor-id="route-decomposition">5. Route Decomposition</h2>

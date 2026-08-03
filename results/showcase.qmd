@@ -19,8 +19,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import glob
 
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import HDBSCAN
+
 import seasons
 import plotting
+from transformers import TrackCellTransformer
 ```
 
 ## Table of Contents
@@ -426,9 +432,9 @@ Now I will apply these GPX data extraction steps to each GPX file, and add the r
 ```{python}
 #| echo: false
 print("Updated Master Dataframe:")
-gdf_track_info = gpd.read_parquet("../data/intermediate/track_info_unagg.parquet")
-display(gdf_track_info.sample(10).sort_values("track_file_datetime"))
-print(f"Dataframe Length: {len(gdf_track_info)} Rows")
+df_tracks = gpd.read_parquet("../data/intermediate/track_info_unagg.parquet")
+display(df_tracks.sample(10).sort_values("track_file_datetime"))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
 ```
 
 #### 2.4.4 Activity Recombination
@@ -437,12 +443,12 @@ Sometimes, I chose to record a workout all in the same recorded activity, and ot
 First, I will identify all dates with more than one recorded activity.
 ```{python}
 # isolate dates with multiple runs for further processing
-counts = gdf_track_info[["track_file_date", "start_datetime"]].groupby("track_file_date").agg("count")
+counts = df_tracks[["track_file_date", "start_datetime"]].groupby("track_file_date").agg("count")
 multple_dates = counts.loc[counts["start_datetime"] > 1].index
 # dataframe with single-run dates
-gdf_track_info_singles = gdf_track_info.loc[~gdf_track_info['track_file_date'].isin(multple_dates)]
+df_tracks_singles = df_tracks.loc[~df_tracks['track_file_date'].isin(multple_dates)]
 # dataframe with multiple-run dates
-gdf_track_info_multiples = gdf_track_info.loc[gdf_track_info['track_file_date'].isin(multple_dates)]
+df_tracks_multiples = df_tracks.loc[df_tracks['track_file_date'].isin(multple_dates)]
 ```
 
 Next, I need to find a way to identify doubles. Let's look at the distribution of the time between activities for all of the days with more than one recorded activity. To do this I will group all the workouts by their date and calculate the time between same-day workouts.
@@ -450,7 +456,7 @@ Next, I need to find a way to identify doubles. Let's look at the distribution o
 #| echo: false
 # plots exploring doubles
 diff_list = []
-for group_name, group in gdf_track_info_multiples.groupby("track_file_date"):
+for group_name, group in df_tracks_multiples.groupby("track_file_date"):
     diff_list += list(group["start_datetime"].diff().apply(lambda x: x.total_seconds()/60).values[1::])
 diff_list = np.array(diff_list) / 60
 
@@ -499,7 +505,7 @@ agg_dict = {
     "track_line": agg_track_lines
 }
 
-for group_name, group in gdf_track_info_multiples.groupby("track_file_date"):
+for group_name, group in df_tracks_multiples.groupby("track_file_date"):
     split = group['start_datetime'].diff().apply(lambda x: x.total_seconds()/3600) > 3
     if split.sum() > 0:
         # add condensed first session
@@ -515,40 +521,127 @@ for group_name, group in gdf_track_info_multiples.groupby("track_file_date"):
         # add condensed session
         rows.append(group.groupby("track_file_date").agg(agg_dict).reset_index())
 
-gdf_track_info_multiples_combined = gpd.GeoDataFrame(pd.concat(rows), geometry="track_line", crs="EPSG:4326")
-gdf_track_info_multiples_combined["start_point"] = gpd.GeoSeries(gdf_track_info_multiples_combined["end_point"], crs=gdf_track_info_multiples_combined.crs)
-gdf_track_info_multiples_combined["end_point"] = gpd.GeoSeries(gdf_track_info_multiples_combined["end_point"], crs=gdf_track_info_multiples_combined.crs)
+df_tracks_multiples_combined = gpd.GeoDataFrame(pd.concat(rows), geometry="track_line", crs="EPSG:4326")
+df_tracks_multiples_combined["start_point"] = gpd.GeoSeries(df_tracks_multiples_combined["end_point"], crs=df_tracks_multiples_combined.crs)
+df_tracks_multiples_combined["end_point"] = gpd.GeoSeries(df_tracks_multiples_combined["end_point"], crs=df_tracks_multiples_combined.crs)
 ```
 
 ```{python}
 #| echo: false
 print("Table with multiples combined")
-display(gdf_track_info_multiples_combined.head(5))
-print(f"Dataframe Length: {len(gdf_track_info_multiples_combined)} Rows")
+display(df_tracks_multiples_combined.head(5))
+print(f"Dataframe Length: {len(df_tracks_multiples_combined)} Rows")
 ```
 
 ```{python}
 #| echo: false
-df_tracks = pd.concat([gdf_track_info_singles, gdf_track_info_multiples_combined]).sort_values("track_file_datetime").reset_index(drop=True)
+df_tracks = pd.concat([df_tracks_singles, df_tracks_multiples_combined]).sort_values("track_file_datetime").reset_index(drop=True)
 print("Current Master Dataframe:")
 display(df_tracks.head(5))
 print(f"Dataframe Length: {len(df_tracks)} Rows")
 ```
 
 #### 2.4.5 Region Assignment
+The vast majority of runs take place somewhere within St. Charles (there are some in other regions of the state and country from trips), and within St. Charles they form some natural clusters.
+
+```{python}
+#| echo: false
+df_tracks = gpd.read_parquet("../data/cleaned/track_info.parquet")
+df_tracks_stc = df_tracks[df_tracks["region"] != "Other"]
+regions = gpd.read_file("../data/raw/regions.geojson")
+
+fig, ax = plt.subplots(figsize=(8, 8))
+regions[6::].to_crs(3857).plot(ax=ax, ls='dashed', edgecolor='k', lw=1, facecolor='none')
+df_tracks_stc.set_geometry("start_point").to_crs(3857).plot(ax=ax, markersize=2)
+cx.add_basemap(ax, source=cx.providers.CartoDB.Voyager)
+plt.show()
+```
+
+I identified six regions within St. Charles that are typical starting places for runs and added this variable to our master dataframe.
 
 ```{python}
 #| echo: false
 fig, ax = plt.subplots(figsize=(8, 8))
-regions = gpd.read_file("../data/raw/regions.geojson")
 regions.to_crs(3857).plot(ax=ax, ls='dashed', edgecolor='k', lw=1, facecolor='none')
-# gdf_track_info_stc = gdf_track_info[gdf_track_info["region"] != "Other"]
-# gdf_track_info_stc.set_geometry("start_point").to_crs(3857).plot("region", ax=ax, legend=True, marker='o', s=2)
+df_tracks_stc.set_geometry("start_point").to_crs(3857).plot("region", ax=ax, legend=True, marker='o', s=2)
 cx.add_basemap(ax, source=cx.providers.CartoDB.Voyager)
+plt.show()
 ```
 
 ## 4. Route Clustering
-Route Classification
+Routes are segments of tracks that show up time and time again across the dataset. A single run may contain more than one route, since sometimes routes are chained together.
+
+I am going to use an unsupervised machine learning model to identify runs that traverse the same route. From there, I will manually assign each route its name. Not every run will be a known route, sometimes a route was not run more than a once or twice.
+
+Here is the architecture of the model:
+```{python}
+cell_res = 11
+min_cluster_size = 4
+
+track_cells_pipeline = Pipeline(
+    steps=[
+        ('h3', TrackCellTransformer(cell_res=cell_res)),
+        ('vectorizor', TfidfVectorizer()),
+    ]
+)
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('track_line_cells', track_cells_pipeline, ["track_line"]),
+    ],
+    remainder='drop'
+)
+
+model = Pipeline(
+    steps=[
+        ('preprocessor', preprocessor),
+        ('estimator', HDBSCAN(metric='cosine', min_cluster_size=min_cluster_size)),
+    ]
+)
+```
+
+Let's fit the model and look at the results
+```{python}
+#| warning: false
+_ = model.fit(df_tracks_stc)
+```
+
+```{python}
+#| echo: false
+df_tracks_stc['route_label'] = model.named_steps['estimator'].labels_
+df_tracks_stc['route_probability'] = model.named_steps['estimator'].probabilities_
+
+num_groups = len(df_tracks_stc['route_label'].value_counts())
+print(f"Total Runs: {len(df_tracks_stc)}")
+print(f"Number of Clusters: {num_groups}")
+num_runs_without_group = len(df_tracks_stc.loc[df_tracks_stc['route_label'] == -1])
+print(f"Number of Unclustered Runs: {num_runs_without_group}")
+mean_group_size = df_tracks_stc['route_label'].loc[df_tracks_stc['route_label'] != -1].value_counts().mean()
+print(f"Mean Cluster Size: {mean_group_size:.2f}")
+median_group_size = df_tracks_stc['route_label'].loc[df_tracks_stc['route_label'] != -1].value_counts().median()
+print(f"Median Cluster Size: {median_group_size}")
+
+sns.violinplot(df_tracks_stc['route_label'].loc[df_tracks_stc['route_label'] != -1].value_counts())
+plt.title("Number of Runs per Route Cluster")
+plt.show()
+sns.violinplot(df_tracks_stc['route_probability'].loc[df_tracks_stc['route_label'] != -1])
+plt.title("Distribution of Cluster Probabilities")
+plt.show()
+```
+
+```{python}
+#| echo: false
+df_routes = pd.read_csv("../data/raw/routes.csv")
+df_tracks_stc = pd.merge(df_tracks_stc, df_routes[["route_label", "route_type", "route_name"]], on="route_label", how="left").drop(columns=["route_label"])
+df_tracks_stc['route_type'] = df_tracks_stc['route_type'].fillna("Unknown")
+df_tracks_stc['route_name'] = df_tracks_stc['route_name'].fillna("Unknown")
+
+plt.figure(figsize=(12, 5))
+plt.bar(df_tracks_stc.loc[df_tracks_stc['route_name'] != "Unknown", 'route_name'].value_counts().index, df_tracks_stc.loc[df_tracks_stc['route_name'] != "Unknown", 'route_name'].value_counts().values)
+plt.xticks(rotation=90, fontsize=8)
+plt.title("Route Distribution")
+plt.show()
+```
 
 ## 5. Route Decomposition
 
