@@ -81,7 +81,7 @@ I have constructed this document to explain each decision I made while working w
 
 ```{python}
 #| echo: false
-# df = pd.read_parquet("../data/intermediate/record_data.parquet")
+# df = pd.read_parquet("data/intermediate/record_data.parquet")
 # print("Sample of 3 \"Record\" records:")
 # display(df.sample(3))
 # print(f"Dataframe Length: {len(df)} Rows")
@@ -165,7 +165,7 @@ The `.xml` file contains a `Workout` tag, which contains a data record for indiv
 
 ```{python}
 #| echo: false
-df_workouts = pd.read_parquet("../data/intermediate/workout_data.parquet")
+df_workouts = pd.read_parquet("data/intermediate/workout_data.parquet")
 print("Sample of 3 \"Workout\" records:")
 display(df_workouts.sample(3))
 print(f"Dataframe Length: {len(df_workouts)} Rows")
@@ -201,7 +201,7 @@ Both tables are prepared, but there is one obstacle remaining to merging them to
 
 ```{python}
 #| echo: false
-df_merged = pd.read_parquet("../data/intermediate/track_info_merged.parquet")
+df_merged = pd.read_parquet("data/intermediate/track_info_merged.parquet")
 print("Merged Dataframes:")
 display(df_merged.head(3))
 print(f"Dataframe Length: {len(df_merged)} Rows")
@@ -218,7 +218,7 @@ A single `.gpx` file can contain multiple data layers:
 
 ```{python}
 #| echo: false
-gpx_file = glob.glob("../data/raw/workout-routes/*.gpx")[0]
+gpx_file = glob.glob("data/raw/workout-routes/*.gpx")[0]
 print("GPX File Layers:")
 display(gpd.list_layers(gpx_file))
 ```
@@ -238,7 +238,7 @@ display(gdf)
 
 ```{python}
 #| echo: false
-gdf = gpd.read_file(glob.glob("../data/raw/workout-routes/*.gpx")[0], layer='track_points')
+gdf = gpd.read_file(glob.glob("data/raw/workout-routes/*.gpx")[0], layer='track_points')
 print("\"track_points\" Layer:")
 display(gdf.head(3))
 print(f"Dataframe Length: {len(gdf)} Rows")
@@ -427,7 +427,7 @@ Now I will apply these GPX data extraction steps to each GPX file, and add the r
 ```{python}
 #| echo: false
 print("Updated Master Dataframe:")
-df_tracks = gpd.read_parquet("../data/intermediate/track_info_unagg.parquet")
+df_tracks = gpd.read_parquet("data/intermediate/track_info_unagg.parquet")
 display(df_tracks.sample(10).sort_values("track_file_datetime"))
 print(f"Dataframe Length: {len(df_tracks)} Rows")
 ```
@@ -541,9 +541,9 @@ The vast majority of runs take place somewhere within St. Charles (there are som
 
 ```{python}
 #| echo: false
-df_tracks = gpd.read_parquet("../data/cleaned/track_info.parquet")
+df_tracks = gpd.read_parquet("data/cleaned/track_info.parquet")
 df_tracks_stc = df_tracks[df_tracks["region"] != "Other"]
-regions = gpd.read_file("../data/raw/regions.geojson")
+regions = gpd.read_file("data/raw/regions.geojson")
 
 fig, ax = plt.subplots(figsize=(8, 8))
 regions[6::].to_crs(3857).plot(ax=ax, ls='dashed', edgecolor='k', lw=1, facecolor='none')
@@ -631,7 +631,7 @@ I complied a report of the clustering into a [PDF](results/multipage_plots.pdf) 
 
 ```{python}
 #| echo: false
-df_routes = pd.read_csv("../data/raw/routes.csv")
+df_routes = pd.read_csv("data/raw/routes.csv")
 df_tracks_stc = pd.merge(df_tracks_stc, df_routes[["route_label", "route_type", "route_name"]], on="route_label", how="left").drop(columns=["route_label"])
 df_tracks_stc['route_type'] = df_tracks_stc['route_type'].fillna("Unknown")
 df_tracks_stc['route_name'] = df_tracks_stc['route_name'].fillna("Unknown")
