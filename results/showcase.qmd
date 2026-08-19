@@ -658,3 +658,26 @@ My primary goal is to somehow use PyTorch to create a neural network that does s
 - For runs that are workouts, the workout typically contains a warmup, one or more workout segments, and a cooldown. It would be interesting to be able to break these apart and look at specific workout stats, and also examine routes and segments for warmups, workouts, and cooldowns.
 
 
+Route Decomposition
+GPS points
+        │
+        ▼
+H3 cells
+        │
+        ▼
+Embedding layer
+        │
+        ▼
+Transformer
+        │
+        ▼
+Segment label or unknown segment for each point, compressing duplicates
+        │                           │
+        ▼                           ▼
+Route Segments: S1 → S2 → S4    Route Segments: S1 → Unknown
+        |                           │ 
+        ▼                           ▼
+Route lookup                    Region Clustering
+        │                           │
+        ▼                           ▼
+Route: Dog Leg                 Route: LeRoy Oakes

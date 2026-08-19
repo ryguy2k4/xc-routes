@@ -1,38 +1,9 @@
 # XC Routes GIS Project
 
+## Overview
+I ran cross country and track all four years that I was in high school, and I recorded every single run on my Apple Watch. I believe that this is a very unique trove of data that has the potential to be very interesting and very personal. I obtained the raw data by exporting my Apple Health data. This export gave me a 2.23 GB `.xml` file and a folder containing 1,232 `.gpx` files.
 
-
-Tasks:
-* For workouts that were aggregated, the distinction between a pause and a segment has been lost.
-* Run Type Column (Normal, Long, Hills, Tempo, Fartlek, Track)
-* Route Column (Named Route, None)
-
-## Route Decomposition
-GPS points
-        │
-        ▼
-H3 cells
-        │
-        ▼
-Embedding layer
-        │
-        ▼
-Transformer
-        │
-        ▼
-Segment label or unknown segment for each point, compressing duplicates
-        │                           │
-        ▼                           ▼
-Route Segments: S1 → S2 → S4    Route Segments: S1 → Unknown
-        |                           │ 
-        ▼                           ▼
-Route lookup                    Region Clustering
-        │                           │
-        ▼                           ▼
-Route: Dog Leg                 Route: LeRoy Oakes
-
-
-
+Please see the [this](results/showcase.html) document where I showcase the entire workflow of this project.
 
 ## Data Cleaning / Parsing Steps
 * Load track file paths and extract the date from the file name
@@ -53,7 +24,6 @@ Route: Dog Leg                 Route: LeRoy Oakes
     * *Detect and merge workouts* -> the same thing might accomplish both of these in one go (do I want warmup/cooldown merged?)
 
 ## Data Quality Issues
-
 ### Activity Type
 Biking, Walking, and Hiking activities may be mixed in. However, there are 8 GPX tracks that I could not link to an XML entry; I have assumed that they are indeed running workouts.
 
@@ -70,50 +40,20 @@ In some runs, I would pause and not remember to unpause for quite a while, leadi
 
 **Solution**: Detect abnormally large gaps between consecutive points on a track using a threshold of 10 $\sigma$.
 
-
 ## Categorizations to Make
 
 ### Types of Run
-#### Easy Run
+#### Normal Run
 Easy runs are 30-45 minutes at a moderate pace and often follow typical routes.
-
-#### Double
-A double is a second run in a single day, separated by a large time period. The data indicates that a separation of 5 hours is a clean cutoff. Both runs can be considered as a double.
 
 #### Long Run
 Long runs are at least 50 minutes long and often follow typical routes.
 
 #### Workout
-Multiple segments of a workout get complicated. A workout consists of a single warmup segment, one or more workout segments, and a single cooldown segment (this could be further complicated by accidental splits). The warmup and cooldown segments should be flagged as such for later use in understanding the data. The workout segments should be combined together, having their track lines merged, and the activity should be flagged as a workout.
-
-Warmup and cooldown segments can be identified by their short length, typical routes, and by the fact that they precede or follow a workout.
-
-Workout segments can be identified by their faster pace or greater elevation change, and by the fact that they are preceeded by a warmup and followed by a cooldown.
-
-#### Race
-A race is short, fast, and accompanied by a warmup and cooldown. Most races were not recorded by my watch, but a small number were, along with unoffical time trials.
+Multiple segments of a workout get complicated. A workout consists of a single warmup segment, one or more workout segments, and a single cooldown segment (this could be further complicated by accidental splits). The warmup and cooldown segments should be flagged as such for later use in understanding the data. The workout segments should be combined together, having their track lines merged, and the activity should be flagged as a workout. Warmup and cooldown segments can be identified by their short length, typical routes, and by the fact that they precede or follow a workout. Workout segments can be identified by their faster pace or greater elevation change, and by the fact that they are preceeded by a warmup and followed by a cooldown.
 
 ### Route
 Routes are segements of tracks that show up time and time again across the dataset. My strategy for route classification is to first do a pass of unsupervised clustering in order to see what all the routes are. Then, I will use the results to construct a training dataset. For each route, I will pick a single track line that best exemplifies that particular route. Then I will run a supervised learning algorithm to classify the routes in the entire dataset. A single run may contain more than one route, since sometimes routes are chained together.
-
-
-* School
-    * Lake Loop
-    * Dog Leg
-    * Persimmon
-    * Buddy's
-    * Duke's
-    * River Trail
-    * Cornerstone
-    * K's Loop
-* Home
-* Mount Saint Mary's
-* Leroy Oakes
-    * Course
-* Great West
-* Potowatomie
-    * Double Tunnel
-* Meets
 
 ### Year
 * Freshman
@@ -126,8 +66,6 @@ Routes are segements of tracks that show up time and time again across the datas
 * XC Season
 * Winter Training
 * Track Season
-
-
 
 ## Data Dictionary of Processed Data
 
