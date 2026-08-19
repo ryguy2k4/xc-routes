@@ -30,9 +30,9 @@ from transformers import TrackCellTransformer
 ```
 
 ## Table of Contents
-* [1. Introduction](#1-introduction)
-    * [1.1 Goals](#11-goals)
-* [2. Data Cleaning](#2-data-cleaning)
+* [1. Introduction](#introduction)
+    * [1.1 Goals]()
+* [2. Data Cleaning](#data-cleaning)
     * [2.1 GPX File List]()
         * [2.1.1 Parse Filename]()
         * [2.1.2 Filter Time Period]()
@@ -44,22 +44,16 @@ from transformers import TrackCellTransformer
     * [2.4 GPX Track Data Extraction]()
         * [2.4.3 Statistics]()
         * [2.4.2 Pause Detection]()
-
-
-
-* [3. Route Classification](#3-route-classification)
+* [3. Route Clustering](#route-clustering)
     * [4.1 Unsupervised Route Clustering]()
     * [4.2 Creating a Route Library]()
     * [4.2 Supervised Route Clustering]()
-* [4. Run Type Classification](#4-run-type-classification)
-    * [5.1 Run Type Overview]()
-    * [5.2 Flagging Doubles]()
-    * [5.3 Fixing Accidental Splits]()
-    * [5.4 Grouping Workouts]()
-* [5. Analysis](#5-analysis)
-* [6. Summary](#6-summary)
+* [4. Next Steps](#next-steps)
 
-## 1. Introduction
+
+
+## 1. Introduction 
+<a id="introduction"></a>
 
 I ran cross country and track all four years that I was in high school, and I recorded every single run on my Apple Watch. I believe that this is a very unique trove of data that has the potential to be very interesting and very personal.
 
@@ -94,6 +88,7 @@ I have constructed this document to explain each decision I made while working w
 ```
 
 ## 2. Data Cleaning
+<a id="data_cleaning"></a>
 
 The raw data must be converted into a convenient form, have certain constraints applied, and new features derived. As shown above, the raw data is spread across several different sources which must be integrated together.
 
@@ -568,12 +563,15 @@ cx.add_basemap(ax, source=cx.providers.CartoDB.Voyager)
 plt.show()
 ```
 
-## 4. Route Clustering
+## 3. Route Clustering
+<a id="route_clustering"></a>
 Routes are segments of tracks that show up time and time again across the dataset. A single run may contain more than one route, since sometimes routes are chained together.
 
 I am going to use an unsupervised machine learning model to identify runs that traverse the same route. From there, I will manually assign each route its name. Not every run will be a known route, sometimes a route was not run more than a once or twice.
 
-Here is the architecture of the model:
+The model needs to cluster routes based on the GPS trajectory. We need to coax the GPS trajectory into a set of feature variables. To do this, we are going to spatially index the trajectory using H3 cells. This maps each latitude/longitude coordinate pair onto a hexagonal grid, such that each coordinate pair returns a cell ID. There are several different grid resolutions, and 11 seems to work well, it corresponds to an edge length of 28 meters. This step converts our sequence of continuous coordinates into a sequence of discrete cells. The next step is to vectorize the sequence using term-frequency-inverse-document-frequency vectorization.
+
+These steps are all wrapped inside of sci-kit learn pipelines and custom transformers. The final step is to run the clustering algorithm, HDBSCAN. Here is the architecture of the model:
 ```{python}
 cell_res = 11
 min_cluster_size = 4
@@ -600,7 +598,7 @@ model = Pipeline(
 )
 ```
 
-Let's fit the model and look at the results
+Let's fit the model and look at the results.
 ```{python}
 #| warning: false
 _ = model.fit(df_tracks_stc)
@@ -629,12 +627,18 @@ plt.title("Distribution of Cluster Probabilities")
 plt.show()
 ```
 
+I complied a report of the clustering into a [PDF](results/multipage_plots.pdf) showing all the clusters and all the routes belonging to each cluster. I used this to manually label each route with its name, and then merged these names into our master dataframe.
+
 ```{python}
 #| echo: false
 df_routes = pd.read_csv("../data/raw/routes.csv")
 df_tracks_stc = pd.merge(df_tracks_stc, df_routes[["route_label", "route_type", "route_name"]], on="route_label", how="left").drop(columns=["route_label"])
 df_tracks_stc['route_type'] = df_tracks_stc['route_type'].fillna("Unknown")
 df_tracks_stc['route_name'] = df_tracks_stc['route_name'].fillna("Unknown")
+
+print("Current Master Dataframe:")
+display(df_tracks_stc.head(5))
+print(f"Dataframe Length: {len(df_tracks)} Rows")
 
 plt.figure(figsize=(12, 5))
 plt.bar(df_tracks_stc.loc[df_tracks_stc['route_name'] != "Unknown", 'route_name'].value_counts().index, df_tracks_stc.loc[df_tracks_stc['route_name'] != "Unknown", 'route_name'].value_counts().values)
@@ -643,16 +647,14 @@ plt.title("Route Distribution")
 plt.show()
 ```
 
-## 5. Route Decomposition
+## 4. Next Steps
+<a id="next_steps"></a>
+My primary goal is to somehow use PyTorch to create a neural network that does something cool. I'm having trouble articulating exactly what I want the end results to look like, but I will try to outline some of what I am thinking.
 
-
-## 5. Run Type Classification
-Run Type Classification
-
-## 6. Analysis
-Analysis
-
-## 7. Summary
-Summary
+- One desire I have is to give every run a label based on what type of run it is, like Normal Run, Long Run, Tempo Workout, Track Workout, Hill Workout, or Fartlek Workout. This would probably be closely coupled with the route and I'm not sure how to approach that.
+- Right now, I have assigned route names based on the clustering results. Out of 803 total runs, the 754 that are located in St. Charles were put through the clustering model. 509 were given route labels, and 245 were labeled as unknown.
+- In addition to routes, I think it could be interesting to look at more specific route segments and identifying all the runs that contain a given segment. This would be a use for a Transformer-based deep model. I'm having trouble seeing what the data structure for this might look like.
+- The route framework has limitations too. Some runs are more *adventurous*, and do not follow the same exact trajectory, but may still be clustered in a certain region, like a park. This is sort of accounted for in the region variable I already have.
+- For runs that are workouts, the workout typically contains a warmup, one or more workout segments, and a cooldown. It would be interesting to be able to break these apart and look at specific workout stats, and also examine routes and segments for warmups, workouts, and cooldowns.
 
 

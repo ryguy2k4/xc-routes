@@ -1,10 +1,6 @@
 # XC Routes GIS Project
 
-* Resampling for route matching?
-* Need a coupled approach to route detection and run type assignment
-    * Canonical routes include both workout segments, and WU/CD and workout all in one track. It would be simpler to first combine all WU/Workout/CD runs into one track line, and compare the combined track line against the canonical workout routes.
-    * At the same time, detection and merging of workout segments could be aided by seeing if the combined route has a good match to a canonical workout route, or if the segments match to canonical workout segments.
-* Experimenting with route detection by calculating similarity to canonical routes does sort of work, but it seems like route decomposition would do a better and more accurate job.
+
 
 Tasks:
 * For workouts that were aggregated, the distinction between a pause and a segment has been lost.
